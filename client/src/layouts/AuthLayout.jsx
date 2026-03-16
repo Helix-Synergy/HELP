@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.jpg';
 import './AuthLayout.css';
 
 const AuthLayout = () => {

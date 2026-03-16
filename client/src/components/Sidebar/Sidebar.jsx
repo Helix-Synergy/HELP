@@ -6,7 +6,7 @@ import {
     Briefcase, CheckSquare, FileText, Settings, Target, Receipt, HeadphonesIcon, Monitor, BookOpen, GitMerge,
     ChevronLeft, ChevronRight
 } from 'lucide-react';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/logo.jpg';
 import './Sidebar.css';
 
 const navItems = [
