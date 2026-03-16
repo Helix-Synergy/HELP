@@ -63,6 +63,30 @@
     height: 48px;
 }
 
+.password-input {
+    padding-right: 48px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.toggle-password:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+}
+
 .login-btn {
     width: 100%;
     height: 48px;

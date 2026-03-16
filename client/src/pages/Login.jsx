@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LogIn, Mail, Lock } from 'lucide-react';
+import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import api from '../api/axios';
 import './Login.css';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -66,13 +65,21 @@ const Login = () => {
                     <div className="input-with-icon">
                         <Lock className="input-icon" size={18} />
                         <input
-                            type="password"
-                            className="input-field"
+                            type={showPassword ? "text" : "password"}
+                            className="input-field password-input"
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
+                        <button 
+                            type="button" 
+                            className="toggle-password"
+                            onClick={() => setShowPassword(!showPassword)}
+                            tabIndex="-1"
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
                     </div>
                 </div>
 
