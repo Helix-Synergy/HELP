@@ -6,6 +6,7 @@ import {
     Briefcase, CheckSquare, FileText, Settings, Target, Receipt, HeadphonesIcon, Monitor, BookOpen, GitMerge,
     ChevronLeft, ChevronRight
 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 import './Sidebar.css';
 
 const navItems = [
@@ -42,8 +43,8 @@ const Sidebar = () => {
         >
             <div className="sidebar-header">
                 <div className="sidebar-logo">
-                    <div className="logo-icon-small"></div>
-                    {!isCollapsed && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>HELP</motion.span>}
+                    <img src={logo} alt="Logo" className="sidebar-logo-img" />
+                    {!isCollapsed && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ whiteSpace: 'nowrap' }}>Helix Synergy</motion.span>}
                 </div>
                 <button className="collapse-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
                     {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}

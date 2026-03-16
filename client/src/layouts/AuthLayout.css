@@ -29,11 +29,10 @@
     margin-bottom: 40px;
 }
 
-.logo-icon {
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, var(--accent-primary), #8B5CF6);
-    border-radius: 8px;
+.auth-logo {
+    height: 80px;
+    width: auto;
+    object-fit: contain;
 }
 
 .brand-section h1 {

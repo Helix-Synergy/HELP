@@ -34,11 +34,10 @@
     color: var(--text-primary);
 }
 
-.logo-icon-small {
-    width: 28px;
-    height: 28px;
-    background: linear-gradient(135deg, var(--accent-primary), #8B5CF6);
-    border-radius: 6px;
+.sidebar-logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
     flex-shrink: 0;
 }
 

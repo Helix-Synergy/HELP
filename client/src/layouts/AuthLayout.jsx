@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import logo from '../assets/logo.png';
 import './AuthLayout.css';
 
 const AuthLayout = () => {
@@ -14,8 +15,7 @@ const AuthLayout = () => {
                     transition={{ duration: 0.8 }}
                 >
                     <div className="logo-container">
-                        <div className="logo-icon"></div>
-                        <h1>HELP</h1>
+                        <img src={logo} alt="Helix Synergy Corp Logo" className="auth-logo" />
                     </div>
                     <h2>Enterprise People Management,<br />Simplified.</h2>
                     <p>Streamline your HR workflows, track attendance, and empower employees with a beautiful, fast interface.</p>
