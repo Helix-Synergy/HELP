@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+client/.env
+server/.env
+
+# Build outputs
+dist/
+build/
+client/dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+server/login_debug.txt
+
+# Editor/OS files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.sln
+*.sw?
+
+# Temporary files
+tmp/
+*.tmp
+server/db_check_output.txt
+server/user_dump.json
+server/check_db.js
+server/init_performance.js
+server/debug_filter.js
+server/audit_users.js
+server/dump_users.js
+server/verify_login.js
+server/check_local_db.js
+server/verify_local.js
+server/seed_atlas.js
+server/test_login_local.js

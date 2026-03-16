@@ -1,0 +1,99 @@
+.auth-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+}
+
+.auth-left {
+    flex: 1;
+    background-color: var(--bg-secondary);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    border-right: 1px solid var(--border-color);
+}
+
+.brand-section {
+    position: relative;
+    z-index: 10;
+    max-width: 480px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--accent-primary), #8B5CF6);
+    border-radius: 8px;
+}
+
+.brand-section h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.brand-section h2 {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    letter-spacing: -1px;
+}
+
+.brand-section p {
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.bg-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 1;
+    opacity: 0.4;
+}
+
+.glow-1 {
+    background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
+    top: -200px;
+    left: -200px;
+}
+
+.glow-2 {
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    bottom: -200px;
+    right: -200px;
+}
+
+.auth-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background-color: var(--bg-primary);
+}
+
+.auth-box {
+    width: 100%;
+    max-width: 420px;
+}
+
+@media (max-width: 900px) {
+    .auth-left {
+        display: none;
+    }
+}

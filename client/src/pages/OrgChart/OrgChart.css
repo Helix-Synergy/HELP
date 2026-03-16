@@ -1,0 +1,37 @@
+.orgchart-page {
+    /* Main container styling handled by Tailwind */
+}
+
+.org-canvas {
+    background-image:
+        radial-gradient(#e5e7eb 1px, transparent 1px),
+        radial-gradient(#e5e7eb 1px, transparent 1px);
+    background-position: 0 0, 20px 20px;
+    background-size: 40px 40px;
+}
+
+.org-node-container {
+    padding: 0 16px;
+    position: relative;
+}
+
+.org-children-container::before {
+    content: '';
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    width: 2px;
+    height: 32px;
+    background-color: #d1d5db;
+    /* gray-300 */
+    transform: translateX(-50%);
+}
+
+.org-card {
+    transition: all 0.2s ease;
+}
+
+/* For grabbing the canvas to pan (if implemented later) */
+.org-canvas:active {
+    cursor: grabbing;
+}

@@ -1,0 +1,222 @@
+.timesheets-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.timesheet-card {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.timesheet-header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.week-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.current-week-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+}
+
+.timesheet-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.timesheet-grid-wrapper {
+    overflow-x: auto;
+}
+
+.timesheet-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.timesheet-table th,
+.timesheet-table td {
+    border: 1px solid var(--border-color);
+}
+
+.timesheet-table th {
+    background-color: var(--bg-tertiary);
+    padding: 12px;
+    text-align: center;
+}
+
+.th-project {
+    text-align: left !important;
+    width: 300px;
+    padding-left: 24px !important;
+}
+
+.day-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.day-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.th-day {
+    width: 80px;
+}
+
+.th-day.weekend {
+    background-color: var(--bg-secondary);
+    opacity: 0.7;
+}
+
+.th-total {
+    width: 80px;
+    font-weight: 700;
+}
+
+.td-project {
+    padding: 16px 24px;
+}
+
+.ts-project-info {
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.ts-project-info span {
+    color: var(--text-tertiary);
+    font-size: 12px;
+}
+
+.ts-task-input input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.ts-task-input input:focus {
+    outline: none;
+    color: var(--text-primary);
+}
+
+.td-hour {
+    padding: 0;
+    position: relative;
+}
+
+.td-hour.weekend {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='dark'] .td-hour.weekend {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.hour-input {
+    width: 100%;
+    height: 60px;
+    border: none;
+    text-align: center;
+    font-size: 16px;
+    background: transparent;
+    font-weight: 500;
+}
+
+.hour-input:focus {
+    outline: none;
+    background-color: var(--accent-light);
+}
+
+.hour-input.has-value {
+    color: var(--accent-primary);
+    font-weight: 700;
+}
+
+/* Hide arrows from number input */
+.hour-input::-webkit-outer-spin-button,
+.hour-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.td-total {
+    text-align: center;
+    background-color: var(--bg-tertiary);
+}
+
+.row-total {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.add-row-tr td {
+    border-top: none;
+    border-bottom: 2px dashed var(--border-color);
+    padding: 8px 24px;
+}
+
+.gap-2 {
+    gap: 8px;
+}
+
+.py-2 {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.totals-row td {
+    background-color: var(--bg-tertiary);
+    padding: 16px 0;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.pr-4 {
+    padding-right: 24px;
+}
+
+.col-total {
+    text-align: center;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.col-total.overtime {
+    color: var(--warning);
+}
+
+.grand-total {
+    text-align: center;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--accent-primary);
+}

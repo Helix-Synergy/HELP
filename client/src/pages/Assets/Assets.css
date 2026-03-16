@@ -1,0 +1,41 @@
+.assets-page {
+    display: flex;
+    flex-direction: column;
+}
+
+.asset-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    transition: all 0.2s ease;
+}
+
+.asset-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: var(--accent-primary);
+}
+
+.asset-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background-color: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.asset-details {
+    flex: 1;
+}
+
+.asset-details h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
