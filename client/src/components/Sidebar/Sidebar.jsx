@@ -26,7 +26,7 @@ const navItems = [
     { title: 'Settings', icon: <Settings size={20} />, path: '/settings', roles: ['SUPER_ADMIN', 'HR_ADMIN'] },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [user, setUser] = useState(() => {
         const userStr = localStorage.getItem('hems_user');
@@ -59,8 +59,11 @@ const Sidebar = () => {
 
     return (
         <motion.aside
-            className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}
-            animate={{ width: isCollapsed ? 80 : 260 }}
+            className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
+            animate={{ 
+                width: isCollapsed ? 80 : 260,
+                x: typeof window !== 'undefined' && window.innerWidth <= 768 ? (isMobileOpen ? 0 : -280) : 0
+            }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
             <div className="sidebar-header">
@@ -81,6 +84,7 @@ const Sidebar = () => {
                                 to={item.path}
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                                 title={item.title}
+                                onClick={() => setIsMobileOpen(false)}
                             >
                                 <span className="nav-icon">{item.icon}</span>
                                 {!isCollapsed && <span className="nav-text">{item.title}</span>}

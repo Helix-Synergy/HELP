@@ -25,9 +25,7 @@ const Onboarding = () => {
     const [userDetails, setUserDetails] = useState(null);
     
     // Modals
-    const [showVerifyDocsModal, setShowVerifyDocsModal] = useState(false);
-    const [showVerifyFormModal, setShowVerifyFormModal] = useState(false);
-    const [verifyRemarks, setVerifyRemarks] = useState('');
+    const [showTriggerModal, setShowTriggerModal] = useState(false);
 
     useEffect(() => {
         const userStr = localStorage.getItem('hems_user');
@@ -107,56 +105,11 @@ const Onboarding = () => {
         }
     };
 
-    const verifyDocs = async (userId, status) => {
-        try {
-            await api.put(`/onboarding/verify-docs/${userId}`, { status, remarks: verifyRemarks });
-            alert(`Documents ${status.toLowerCase()} successfully`);
-            setShowVerifyDocsModal(false);
-            setVerifyRemarks('');
-            fetchAdminData();
-        } catch (error) {
-            alert('Verification failed: ' + (error.response?.data?.error || error.message));
-        }
+    const handleActionClick = (userId) => {
+        navigate(`/onboarding/details/${userId}`);
     };
 
-    const verifyFormAction = async (userId, status) => {
-        try {
-            await api.put(`/onboarding/verify-form/${userId}`, { status, remarks: verifyRemarks });
-            alert(`Form ${status.toLowerCase()} successfully`);
-            setShowVerifyFormModal(false);
-            setVerifyRemarks('');
-            fetchAdminData();
-        } catch (error) {
-            alert('Verification failed: ' + (error.response?.data?.error || error.message));
-        }
-    };
 
-    const fetchUserDetails = async (userId) => {
-        try {
-            const res = await api.get(`/users/${userId}`);
-            setUserDetails(res.data.data);
-            const detailRes = await api.get(`/onboarding/me`); // Need a way for admin to see others details
-            // For now, let's just use the selectedUser from the list which has basic info, 
-            // and we'll fetch the full OnboardingDetail in a new endpoint or update existing.
-        } catch (error) {
-            console.error("Error fetching user details:", error);
-        }
-    };
-
-    const fetchSelectedUserDetail = async (userId) => {
-        setIsLoading(true);
-        try {
-            // Need a new endpoint: GET /api/v1/onboarding/user/:userId
-            const res = await api.get(`/onboarding/user/${userId}`);
-            setMyOnboarding(res.data.data);
-        } catch (error) {
-            console.error("Error fetching user detail:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const [showTriggerModal, setShowTriggerModal] = useState(false);
     const [eligibleEmployees, setEligibleEmployees] = useState([]);
 
     const fetchEligibleEmployees = async () => {
@@ -245,45 +198,32 @@ const Onboarding = () => {
                                                 <div className="bg-accent h-2 rounded-full" style={{ width: `${getProgress(u.onboardingStatus)}%` }}></div>
                                             </div>
                                         </td>
-                                        <td className="text-right">
+                                         <td className="text-right">
                                             {u.onboardingStatus === 'DOCUMENTS_SUBMITTED' && (
-                                                <button className="btn-primary py-1 px-3 text-sm" onClick={() => { 
-                                                    setSelectedUser(u); 
-                                                    fetchSelectedUserDetail(u._id);
-                                                    setShowVerifyDocsModal(true); 
-                                                }}>
+                                                <button className="btn-primary py-1 px-3 text-sm" onClick={() => handleActionClick(u._id)}>
                                                     Verify Docs
                                                 </button>
                                             )}
-                                            {u.onboardingStatus === 'COMPLETED' && (
-                                                <button className="text-accent hover:underline text-xs mr-3 font-semibold" onClick={() => {
-                                                    setSelectedUser(u);
-                                                    fetchSelectedUserDetail(u._id);
-                                                    setShowVerifyDocsModal(true);
-                                                }}>
-                                                    Docs
-                                                </button>
-                                            )}
                                             {u.onboardingStatus === 'FORM_SUBMITTED' && (
-                                                <button className="btn-primary py-1 px-3 text-sm" onClick={() => { 
-                                                    setSelectedUser(u); 
-                                                    fetchSelectedUserDetail(u._id);
-                                                    setShowVerifyFormModal(true); 
-                                                }}>
+                                                <button className="btn-primary py-1 px-3 text-sm" onClick={() => handleActionClick(u._id)}>
                                                     Verify Form
                                                 </button>
                                             )}
                                             {u.onboardingStatus === 'COMPLETED' && (
-                                                <button className="btn-secondary py-1 px-3 text-sm flex items-center gap-1 mx-auto" onClick={() => { 
-                                                    setSelectedUser(u); 
-                                                    fetchSelectedUserDetail(u._id);
-                                                    setShowVerifyFormModal(true); 
-                                                }}>
+                                                <button className="btn-secondary py-1 px-3 text-sm flex items-center gap-1 ml-auto" onClick={() => handleActionClick(u._id)}>
                                                     <Eye size={14} /> View Details
                                                 </button>
                                             )}
+                                            {u.onboardingStatus === 'DOCUMENTS_VERIFIED' && (
+                                                <button className="text-accent hover:underline text-xs font-semibold" onClick={() => handleActionClick(u._id)}>
+                                                    View Progress
+                                                </button>
+                                            )}
                                             {['DOCUMENTS_PENDING', 'FORM_PENDING'].includes(u.onboardingStatus) && (
-                                                <span className="text-xs text-secondary italic">Waiting for Employee</span>
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <span className="text-xs text-secondary italic">Step {u.onboardingStatus.startsWith('DOC') ? '1' : '2'} in progress</span>
+                                                    <button className="text-accent hover:underline text-xs font-semibold" onClick={() => handleActionClick(u._id)}>Details</button>
+                                                </div>
                                             )}
                                         </td>
                                     </tr>
@@ -293,130 +233,6 @@ const Onboarding = () => {
                     )}
                 </div>
 
-                {/* Verify Docs Modal */}
-                {showVerifyDocsModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3>Verify Documents: {selectedUser?.firstName}</h3>
-                                <button onClick={() => setShowVerifyDocsModal(false)}><X /></button>
-                            </div>
-                            
-                            <div className="space-y-4 mb-6">
-                                {myOnboarding?.documents.map(doc => (
-                                    <div key={doc._id} className="p-3 border rounded-lg flex justify-between items-center">
-                                        <div>
-                                            <div className="font-bold">{doc.name}</div>
-                                            <div className="text-xs text-secondary italic">Uploaded: {new Date(doc.updatedAt).toLocaleString()}</div>
-                                        </div>
-                                        {doc.fileUrl ? (
-                                            <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-accent flex items-center gap-1 font-semibold">
-                                                <Eye size={16} /> View Document
-                                            </a>
-                                        ) : (
-                                            <span className="text-danger text-xs">Not Uploaded</span>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-
-                            <textarea 
-                                className="input-field mb-4" 
-                                placeholder="Admin Remarks..." 
-                                value={verifyRemarks} 
-                                onChange={e => setVerifyRemarks(e.target.value)}
-                                disabled={selectedUser?.onboardingStatus === 'COMPLETED'}
-                            ></textarea>
-                            
-                            <div className="flex justify-end gap-3 pt-4 border-t">
-                                <button className="btn-secondary" onClick={() => setShowVerifyDocsModal(false)}>{selectedUser?.onboardingStatus === 'COMPLETED' ? 'Close' : 'Cancel'}</button>
-                                {selectedUser?.onboardingStatus !== 'COMPLETED' && (
-                                    <>
-                                        <button className="bg-danger text-white px-6 py-2 rounded-lg font-bold" onClick={() => verifyDocs(selectedUser._id, 'REJECTED')}>Reject Docs</button>
-                                        <button className="btn-primary px-6" onClick={() => verifyDocs(selectedUser._id, 'APPROVED')}>Approve All</button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Verify Form Modal */}
-                {showVerifyFormModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3>Employee Detailed Form: {selectedUser?.firstName}</h3>
-                                <button onClick={() => setShowVerifyFormModal(false)}><X /></button>
-                            </div>
-
-                            {myOnboarding?.personalForm && (
-                                <div className="space-y-6 mb-8">
-                                    <section className="bg-gray-50 p-4 rounded-xl">
-                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-3">Personal & Contact</h4>
-                                        <div className="grid grid-cols-2 gap-y-2 text-sm">
-                                            <div className="text-secondary">Father's Name:</div><div className="font-medium">{myOnboarding.personalForm.fathersName}</div>
-                                            <div className="text-secondary">DOB:</div><div className="font-medium">{myOnboarding.personalForm.dateOfBirth ? new Date(myOnboarding.personalForm.dateOfBirth).toLocaleDateString() : 'N/A'}</div>
-                                            <div className="text-secondary">Blood Group:</div><div className="font-medium">{myOnboarding.personalForm.bloodGroup}</div>
-                                            <div className="text-secondary">Aadhar:</div><div className="font-medium">{myOnboarding.personalForm.aadharNumber}</div>
-                                            <div className="text-secondary">PAN:</div><div className="font-medium">{myOnboarding.personalForm.panNumber}</div>
-                                            <div className="text-secondary col-span-2 border-t pt-2 mt-1">Current Address:</div>
-                                            <div className="font-medium col-span-2 text-xs">{myOnboarding.personalForm.address}</div>
-                                        </div>
-                                    </section>
-
-                                    <section className="bg-gray-50 p-4 rounded-xl">
-                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-3">Professional & Financial</h4>
-                                        <div className="grid grid-cols-2 gap-y-2 text-sm">
-                                            <div className="text-secondary">Qualification:</div><div className="font-medium">{myOnboarding.personalForm.qualification}</div>
-                                            <div className="text-secondary">Experience:</div><div className="font-medium">{myOnboarding.personalForm.experienceYears}</div>
-                                            <div className="text-secondary">PF Num:</div><div className="font-medium">{myOnboarding.personalForm.pfNumber || 'N/A'}</div>
-                                            <div className="text-secondary">CTC:</div><div className="font-medium text-accent font-bold">{myOnboarding.personalForm.ctc}</div>
-                                        </div>
-                                    </section>
-
-                                    <section className="bg-gray-50 p-4 rounded-xl">
-                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-3">Bank Details</h4>
-                                        <div className="grid grid-cols-2 gap-y-2 text-sm">
-                                            <div className="text-secondary">Holder Name:</div><div className="font-medium">{myOnboarding.personalForm.bankDetails?.accountHolderName}</div>
-                                            <div className="text-secondary">Account No:</div><div className="font-medium">{myOnboarding.personalForm.bankDetails?.accountNumber}</div>
-                                            <div className="text-secondary">Bank Name:</div><div className="font-medium">{myOnboarding.personalForm.bankDetails?.bankName}</div>
-                                            <div className="text-secondary">IFSC:</div><div className="font-medium">{myOnboarding.personalForm.bankDetails?.ifscCode}</div>
-                                        </div>
-                                    </section>
-
-                                    <section className="bg-gray-50 p-4 rounded-xl">
-                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-3">Emergency & Insurance</h4>
-                                        <div className="grid grid-cols-2 gap-y-2 text-sm">
-                                            <div className="text-secondary">Emergency:</div><div className="font-medium">{myOnboarding.personalForm.emergencyContact?.name} ({myOnboarding.personalForm.emergencyContact?.relationship})</div>
-                                            <div className="text-secondary">E-Phone:</div><div className="font-medium">{myOnboarding.personalForm.emergencyContact?.phone}</div>
-                                            <div className="text-secondary border-t pt-2 mt-1">Insurance Type:</div><div className="font-medium border-t pt-2 mt-1">{myOnboarding.personalForm.insuranceDetails?.policyType || 'N/A'}</div>
-                                            <div className="text-secondary">Policy Num:</div><div className="font-medium">{myOnboarding.personalForm.insuranceDetails?.policyNumber || 'N/A'}</div>
-                                        </div>
-                                    </section>
-                                </div>
-                            )}
-
-                            <textarea 
-                                className="input-field mb-4" 
-                                placeholder="Feedback/Remarks..." 
-                                value={verifyRemarks || myOnboarding?.personalForm?.remarks || ''} 
-                                onChange={e => setVerifyRemarks(e.target.value)}
-                                disabled={selectedUser?.onboardingStatus === 'COMPLETED'}
-                            ></textarea>
-                            
-                            <div className="flex justify-end gap-3 pt-4 border-t">
-                                <button className="btn-secondary" onClick={() => setShowVerifyFormModal(false)}>Close</button>
-                                {selectedUser?.onboardingStatus !== 'COMPLETED' && (
-                                    <>
-                                        <button className="bg-danger text-white px-6 py-2 rounded-lg font-bold" onClick={() => verifyFormAction(selectedUser._id, 'REJECTED')}>Reject Form</button>
-                                        <button className="btn-primary px-6" onClick={() => verifyFormAction(selectedUser._id, 'APPROVED')}>Verify & Complete Onboarding</button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
                 {/* Trigger Selection Modal */}
                 {showTriggerModal && (
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

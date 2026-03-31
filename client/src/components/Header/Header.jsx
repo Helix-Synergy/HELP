@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Sun, Moon, User as UserIcon, LogOut } from 'lucide-react';
+import { Search, Bell, Sun, Moon, User as UserIcon, LogOut, Menu } from 'lucide-react';
 import api from '../../api/axios';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ onMenuToggle }) => {
     const [isDark, setIsDark] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [user, setUser] = useState(null);
@@ -91,6 +91,9 @@ const Header = () => {
     return (
         <header className="top-header">
             <div className="header-left">
+                <button className="mobile-menu-toggle" onClick={onMenuToggle}>
+                    <Menu size={24} />
+                </button>
                 <div className="search-bar">
                     <Search size={18} className="search-icon" />
                     <input 

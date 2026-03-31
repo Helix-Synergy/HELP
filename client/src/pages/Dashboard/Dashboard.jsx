@@ -178,39 +178,41 @@ const EmployeeDashboard = () => {
                         <a href="/payroll" className="btn-link text-small">View All</a>
                     </div>
                     <div className="card-body p-0">
-                        <table className="data-table">
-                            <tbody>
-                                {myPayslips.length > 0 ? myPayslips.map(slip => (
-                                    <tr key={slip._id}>
-                                        <td>
-                                            <div className="file-name-cell flex items-center">
-                                                <FileText className="text-secondary mr-2" size={18} />
-                                                <span>{new Date(slip.month + '-02').toLocaleString('default', { month: 'long', year: 'numeric' })} Payslip</span>
-                                            </div>
-                                        </td>
-                                        <td><span className={`file-badge text-white ${slip.status === 'PAID' ? 'bg-success' : 'bg-warning'}`}>{slip.status}</span></td>
-                                        <td>
-                                            <button
-                                                className="icon-btn-small"
-                                                title="Download PDF"
-                                                onClick={() => {
-                                                    const blob = new Blob([`Payslip Details:\nMonth/Year: ${slip.month}\nBase Salary: $${slip.basicSalary}\nNet Pay: $${slip.netPay}`], { type: 'text/plain' });
-                                                    const url = window.URL.createObjectURL(blob);
-                                                    const a = document.createElement('a');
-                                                    a.href = url;
-                                                    a.download = `Payslip_${slip.month}.txt`;
-                                                    a.click();
-                                                }}
-                                            ><Download size={16} /></button>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="3" className="text-center py-4 text-muted">No recent payslips found.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                        <div className="responsive-table-container">
+                            <table className="data-table">
+                                <tbody>
+                                    {myPayslips.length > 0 ? myPayslips.map(slip => (
+                                        <tr key={slip._id}>
+                                            <td>
+                                                <div className="file-name-cell flex items-center">
+                                                    <FileText className="text-secondary mr-2" size={18} />
+                                                    <span>{new Date(slip.month + '-02').toLocaleString('default', { month: 'long', year: 'numeric' })} Payslip</span>
+                                                </div>
+                                            </td>
+                                            <td><span className={`file-badge text-white ${slip.status === 'PAID' ? 'bg-success' : 'bg-warning'}`}>{slip.status}</span></td>
+                                            <td>
+                                                <button
+                                                    className="icon-btn-small"
+                                                    title="Download PDF"
+                                                    onClick={() => {
+                                                        const blob = new Blob([`Payslip Details:\nMonth/Year: ${slip.month}\nBase Salary: $${slip.basicSalary}\nNet Pay: $${slip.netPay}`], { type: 'text/plain' });
+                                                        const url = window.URL.createObjectURL(blob);
+                                                        const a = document.createElement('a');
+                                                        a.href = url;
+                                                        a.download = `Payslip_${slip.month}.txt`;
+                                                        a.click();
+                                                    }}
+                                                ><Download size={16} /></button>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan="3" className="text-center py-4 text-muted">No recent payslips found.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -220,27 +222,29 @@ const EmployeeDashboard = () => {
                         <a href="/documents" className="btn-link text-small">Manage</a>
                     </div>
                     <div className="card-body p-0">
-                        <table className="data-table">
-                            <tbody>
-                                {myDocuments.length > 0 ? myDocuments.map(doc => (
-                                    <tr key={doc._id}>
-                                        <td>
-                                            <div className="file-name-cell">
-                                                <FileText className="text-secondary mr-2" size={18} />
-                                                <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
-                                                    {doc.title}
-                                                </a>
-                                            </div>
-                                        </td>
-                                        <td><span className="text-secondary text-small">{new Date(doc.createdAt).toLocaleDateString()}</span></td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="2" className="text-center py-4 text-muted">No documents uploaded.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                        <div className="responsive-table-container">
+                            <table className="data-table">
+                                <tbody>
+                                    {myDocuments.length > 0 ? myDocuments.map(doc => (
+                                        <tr key={doc._id}>
+                                            <td>
+                                                <div className="file-name-cell">
+                                                    <FileText className="text-secondary mr-2" size={18} />
+                                                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+                                                        {doc.title}
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td><span className="text-secondary text-small">{new Date(doc.createdAt).toLocaleDateString()}</span></td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan="2" className="text-center py-4 text-muted">No documents uploaded.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

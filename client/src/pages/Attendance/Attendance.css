@@ -10,6 +10,14 @@
     align-items: flex-end;
 }
 
+@media (max-width: 640px) {
+    .attendance-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}
+
 .btn-secondary {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
@@ -104,6 +112,17 @@
     margin-bottom: 32px;
 }
 
+@media (max-width: 480px) {
+    .punch-btn {
+        width: 160px;
+        height: 160px;
+    }
+    
+    .active-timer .timer-value {
+        font-size: 36px;
+    }
+}
+
 .punch-btn span {
     font-weight: 700;
     font-size: 18px;
@@ -186,6 +205,12 @@
     gap: 24px;
 }
 
+@media (max-width: 640px) {
+    .quick-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
 .mini-stat {
     padding: 20px;
 }
@@ -223,32 +248,11 @@
     align-items: center;
     padding: 16px 0;
     border-bottom: 1px solid var(--border-color);
+    gap: 16px;
 }
 
 .activity-row:last-child {
     border-bottom: none;
-}
-
-.activity-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: bold;
-    margin-right: 16px;
-}
-
-.icon-in {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--success);
-}
-
-.icon-out {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
 }
 
 .activity-details {
@@ -269,35 +273,80 @@
     color: var(--text-tertiary);
 }
 
-.act-date {
-    font-weight: 500;
-    color: var(--text-secondary);
+.activity-times {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.act-sep {
-    color: var(--border-color);
+.time-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.activity-time-status {
-    text-align: right;
+.time-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-tertiary);
 }
 
-.act-time {
+.time-val {
+    font-size: 13px;
     font-weight: 600;
+    color: var(--text-primary);
+}
+
+.time-sep {
+    color: var(--border-color);
+    font-size: 12px;
+}
+
+.activity-duration {
+    text-align: right;
+    min-width: 60px;
+}
+
+.dur-val {
+    font-weight: 700;
     font-size: 14px;
-    margin-bottom: 6px;
+    color: var(--accent-primary);
 }
 
-.act-badge {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    color: white;
-    display: inline-block;
+.dur-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
 }
 
-.bg-secondary {
-    background: var(--text-secondary);
+@media (max-width: 640px) {
+    .activity-row {
+        flex-wrap: wrap;
+        padding: 20px 0;
+    }
+    
+    .activity-times {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 12px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-md);
+    }
+    
+    .activity-duration {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .dur-label {
+        order: 1;
+    }
+    .dur-val {
+        order: 2;
+    }
 }
 
 @media (max-width: 1024px) {
@@ -310,6 +359,7 @@
 .attendance-filters {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 16px;
     margin-bottom: 24px;
     background: var(--bg-secondary);
@@ -346,6 +396,12 @@
     grid-column: span 2;
 }
 
+@media (max-width: 1024px) {
+    .admin-attendance-section {
+        grid-column: span 1;
+    }
+}
+
 .admin-section-title {
     font-size: 20px;
     font-weight: 700;
@@ -372,13 +428,6 @@
 
 .attendance-emp-card {
     padding: 20px !important;
-    transition: all 0.2s ease;
-    cursor: default;
-}
-
-.attendance-emp-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
 }
 
 .emp-card-top {
@@ -388,18 +437,6 @@
     margin-bottom: 16px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
-}
-
-.emp-card-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-light) 0%, var(--bg-tertiary) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent-primary);
-    flex-shrink: 0;
 }
 
 .emp-card-info {
@@ -414,11 +451,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.emp-card-id {
-    font-size: 12px;
-    color: var(--text-tertiary);
 }
 
 .emp-card-stats {
@@ -436,63 +468,37 @@
     background: var(--bg-primary);
     border-radius: var(--radius-md);
     text-align: center;
-    color: var(--text-secondary);
 }
 
 .emp-card-stat .stat-label {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-tertiary);
     text-transform: uppercase;
-    font-weight: 500;
-    letter-spacing: 0.5px;
 }
 
 .emp-card-stat .stat-value {
     font-size: 13px;
     font-weight: 700;
-    color: var(--text-primary);
 }
 
 .emp-card-times {
     display: flex;
     justify-content: space-between;
     margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px dashed var(--border-color);
     font-size: 12px;
 }
-
-.time-in, .time-out {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.punch-lbl {
-    font-weight: 600;
-    color: var(--text-tertiary);
-}
-
-.punch-time {
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
 
 .status-badge {
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: inline-block;
-    color: #fff !important;
-    flex-shrink: 0;
+    color: white !important;
 }
 
-.status-present { background: #10b981 !important; }
-.status-absent { background: #ef4444 !important; }
-.status-late { background: #f59e0b !important; }
+.status-present { background: var(--success) !important; }
+.status-absent { background: var(--danger) !important; }
+.status-late { background: var(--warning) !important; }
 .status-half_day { background: #6366f1 !important; }
 .status-regularized { background: #0ea5e9 !important; }

@@ -176,3 +176,38 @@
 .text-danger:hover {
     background-color: rgba(239, 68, 68, 0.1) !important;
 }
+
+.mobile-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-primary);
+    margin-right: 12px;
+}
+
+@media (max-width: 768px) {
+    .top-header {
+        padding: 0 16px;
+        height: 60px;
+    }
+
+    .mobile-menu-toggle {
+        display: flex;
+    }
+
+    .search-bar {
+        display: none;
+    }
+
+    .profile-info {
+        display: none;
+    }
+
+    .header-right {
+        gap: 8px;
+    }
+}

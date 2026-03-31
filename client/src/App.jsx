@@ -17,6 +17,7 @@ import Timesheets from './pages/Timesheets/Timesheets';
 import Documents from './pages/Documents/Documents';
 import Payroll from './pages/Payroll/Payroll';
 import Onboarding from './pages/Onboarding/Onboarding';
+import OnboardingDetails from './pages/Onboarding/OnboardingDetails';
 import Performance from './pages/Performance/Performance';
 import Helpdesk from './pages/Helpdesk/Helpdesk';
 import Assets from './pages/Assets/Assets';
@@ -54,6 +55,7 @@ function App() {
             <Route path="/documents" element={<Documents />} />
             <Route path="/payroll" element={<Payroll />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/onboarding/details/:userId" element={<OnboardingDetails />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/helpdesk" element={<Helpdesk />} />
             <Route path="/assets" element={<Assets />} />
