@@ -6,7 +6,7 @@ const User = require('../models/User');
 // Helper to send token response
 const sendTokenResponse = (user, statusCode, res) => {
     // Create token
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'fallback_secret', {
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRE || '30d'
     });
 
@@ -32,6 +32,7 @@ const sendTokenResponse = (user, statusCode, res) => {
                 name: `${user.firstName} ${user.lastName}`,
                 email: user.email,
                 role: user.role,
+                onboardingStatus: user.onboardingStatus,
                 profilePicture: user.profilePicture
             }
         });
@@ -94,6 +95,82 @@ router.post('/setup', async (req, res, next) => {
         });
 
         sendTokenResponse(user, 201, res);
+    } catch (error) {
+        next(error);
+    }
+});
+
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
+
+// @desc    Forgot password
+// @route   POST /api/v1/auth/forgotpassword
+// @access  Public
+router.post('/forgotpassword', async (req, res, next) => {
+    try {
+        const user = await User.findOne({ email: req.body.email });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'There is no user with that email' });
+        }
+
+        // Get reset token
+        const resetToken = user.getResetPasswordToken();
+
+        await user.save({ validateBeforeSave: false });
+
+        // Create reset url
+        const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+
+        const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click the link below to reset your password:\n\n ${resetUrl}\n\nIf you did not request this, please ignore this email. This link will expire in 10 minutes.`;
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'Password reset token',
+                message
+            });
+
+            res.status(200).json({ success: true, data: 'Email sent successfully. Please check your inbox.' });
+        } catch (err) {
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpire = undefined;
+            await user.save({ validateBeforeSave: false });
+
+            return res.status(500).json({ success: false, message: 'Email could not be sent' });
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
+// @desc    Reset password
+// @route   PUT /api/v1/auth/resetpassword/:resettoken
+// @access  Public
+router.put('/resetpassword/:resettoken', async (req, res, next) => {
+    try {
+        // Get hashed token
+        const resetPasswordToken = crypto
+            .createHash('sha256')
+            .update(req.params.resettoken)
+            .digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'Invalid token' });
+        }
+
+        // Set new password
+        user.password = req.body.password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save();
+
+        sendTokenResponse(user, 200, res);
     } catch (error) {
         next(error);
     }

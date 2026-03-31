@@ -1,22 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Plus, Grid as GridIcon, List as ListIcon, MoreVertical, Mail, Phone, X } from 'lucide-react';
+import { 
+    Search, Filter, Plus, Grid as GridIcon, List as ListIcon, MoreVertical, 
+    Mail, Phone, X, CheckCircle, Key, Copy, ExternalLink, ShieldCheck 
+} from 'lucide-react';
 import api from '../../api/axios';
 import './Directory.css';
 
 const Directory = () => {
     const [viewMode, setViewMode] = useState('grid');
     const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
     const [employees, setEmployees] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingEmployeeId, setEditingEmployeeId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         firstName: '', lastName: '', email: '', password: '', role: 'EMPLOYEE',
         designation: '', status: 'ACTIVE',
         phone: '', address: '', dateOfBirth: '', gender: 'Male', maritalStatus: 'Unmarried',
-        resignationDate: '', resignationReason: ''
+        ctc: '', resignationDate: '', resignationReason: '',
+        workMode: 'WFO', performanceFactor: 100, isPFApplicable: true, isBonusApplicable: true, taxPercent: 0
     });
 
     const [openMenuId, setOpenMenuId] = useState(null);
@@ -37,6 +41,7 @@ const Directory = () => {
                 email: u.email,
                 phone: u.contactDetails?.phone || 'N/A',
                 status: u.status === 'ACTIVE' ? 'Active' : 'Inactive',
+                onboardingStatus: u.onboardingStatus,
                 initials: `${u.firstName[0]}${u.lastName[0]}`,
                 raw: u
             }));
@@ -46,13 +51,26 @@ const Directory = () => {
         }
     };
 
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [createdUser, setCreatedUser] = useState(null);
+
+    const generatePassword = () => {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+        let retVal = "";
+        for (let i = 0, n = charset.length; i < 10; ++i) {
+            retVal += charset.charAt(Math.floor(Math.random() * n));
+        }
+        setFormData({ ...formData, password: retVal });
+    };
+
     const handleAddSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await api.post('/users', formData);
-            alert('Employee Added Successfully');
+            const res = await api.post('/users', formData);
+            setCreatedUser({ ...formData, id: res.data.data._id });
             setShowAddModal(false);
+            setShowSuccessModal(true);
             fetchEmployees();
             setFormData({
                 firstName: '', lastName: '', email: '', password: '', role: 'EMPLOYEE',
@@ -72,41 +90,11 @@ const Directory = () => {
     );
 
     const handleEditClick = (emp) => {
-        setEditingEmployeeId(emp.id);
-        const raw = emp.raw;
-        setFormData({
-            firstName: raw.firstName || '',
-            lastName: raw.lastName || '',
-            email: raw.email || '',
-            role: raw.role || 'EMPLOYEE',
-            designation: raw.designation || '',
-            status: raw.status || 'ACTIVE',
-            phone: raw.contactDetails?.phone || '',
-            address: raw.contactDetails?.address || '',
-            dateOfBirth: raw.dateOfBirth ? raw.dateOfBirth.split('T')[0] : '',
-            gender: raw.gender || 'Male',
-            maritalStatus: raw.maritalStatus || 'Unmarried',
-            resignationDate: raw.resignationDate ? raw.resignationDate.split('T')[0] : '',
-            resignationReason: raw.resignationReason || ''
-        });
-        setShowEditModal(true);
+        const id = emp.raw._id || emp.id;
+        navigate(`/directory/edit/${id}`);
         setOpenMenuId(null);
     };
 
-    const handleEditSubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            await api.put(`/users/${editingEmployeeId}`, formData);
-            alert('Employee Updated Successfully');
-            setShowEditModal(false);
-            fetchEmployees();
-        } catch (err) {
-            alert('Error updating employee: ' + (err.response?.data?.error || err.message));
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
 
     return (
         <motion.div
@@ -170,8 +158,9 @@ const Directory = () => {
                         {filteredEmployees.map(emp => (
                             <motion.div
                                 key={emp.id}
-                                className="card emp-card"
+                                className="card emp-card cursor-pointer"
                                 whileHover={{ y: -4, boxShadow: 'var(--shadow-md)' }}
+                                onClick={() => handleEditClick(emp)}
                             >
                                 <div className="emp-card-header">
                                     <span className={`status-badge ${emp.status === 'Active' ? 'bg-success' : emp.status === 'INACTIVE' ? 'bg-error' : 'bg-warning'}`}>
@@ -202,6 +191,22 @@ const Directory = () => {
                                                     >
                                                         Edit
                                                     </button>
+                                                    {emp.onboardingStatus === 'NOT_JOINED' && (
+                                                        <button 
+                                                            className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-600 flex items-center gap-2"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    await api.post(`/onboarding/trigger/${emp.id}`);
+                                                                    alert('Onboarding Triggered successfully!');
+                                                                    fetchEmployees();
+                                                                } catch (err) {
+                                                                    alert('Failed: ' + (err.response?.data?.error || err.message));
+                                                                }
+                                                            }}
+                                                        >
+                                                            Trigger Onboarding
+                                                        </button>
+                                                    )}
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
@@ -214,8 +219,8 @@ const Directory = () => {
                                     <span className="dept-pill">{emp.dept}</span>
                                 </div>
                                 <div className="emp-card-footer">
-                                    <a href={`mailto:${emp.email}`} className="contact-btn"><Mail size={16} /> Email</a>
-                                    <a href={emp.phone !== 'N/A' ? `tel:${emp.phone}` : '#'} className={`contact-btn ${emp.phone === 'N/A' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <a href={`mailto:${emp.email}`} className="contact-btn" onClick={e => e.stopPropagation()}><Mail size={16} /> Email</a>
+                                    <a href={emp.phone !== 'N/A' ? `tel:${emp.phone}` : '#'} className={`contact-btn ${emp.phone === 'N/A' ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={e => e.stopPropagation()}>
                                         <Phone size={16} /> Call
                                     </a>
                                 </div>
@@ -243,7 +248,7 @@ const Directory = () => {
                             </thead>
                             <tbody>
                                 {filteredEmployees.map(emp => (
-                                    <tr key={emp.id}>
+                                    <tr key={emp.id} className="cursor-pointer" onClick={() => handleEditClick(emp)}>
                                         <td>
                                             <div className="list-emp-info">
                                                 <div className="emp-avatar-small">{emp.initials}</div>
@@ -285,6 +290,22 @@ const Directory = () => {
                                                         >
                                                             Edit
                                                         </button>
+                                                        {emp.onboardingStatus === 'NOT_JOINED' && (
+                                                            <button 
+                                                                className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-600 flex items-center gap-2"
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        await api.post(`/onboarding/trigger/${emp.id}`);
+                                                                        alert('Onboarding Triggered successfully!');
+                                                                        fetchEmployees();
+                                                                    } catch (err) {
+                                                                        alert('Failed: ' + (err.response?.data?.error || err.message));
+                                                                    }
+                                                                }}
+                                                            >
+                                                                Trigger Onboarding
+                                                            </button>
+                                                        )}
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
@@ -322,7 +343,12 @@ const Directory = () => {
 
                             <div className="p-6 overflow-y-auto">
                                 <form id="addEmployeeForm" onSubmit={handleAddSubmit} className="space-y-6">
-                                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Account Info</h3>
+                                    <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6">
+                                        <p className="text-xs text-blue-700 leading-relaxed font-medium">
+                                            Admins should only provide account credentials. Personal, professional, and financial details will be collected from the joiner during the onboarding process.
+                                        </p>
+                                    </div>
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="form-group flex-1">
                                             <label>First Name</label>
@@ -337,42 +363,13 @@ const Directory = () => {
                                             <input type="email" required className="input-field" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                                         </div>
                                         <div className="form-group flex-1">
-                                            <label>Temporary Password</label>
-                                            <input type="password" required className="input-field" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="m-0">Temporary Password</label>
+                                                <button type="button" onClick={generatePassword} className="text-xs text-accent font-bold hover:underline">Generate</button>
+                                            </div>
+                                            <input type="text" required className="input-field" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
                                         </div>
-                                    </div>
-
-                                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mt-6">Personal Details</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="form-group flex-1">
-                                            <label>Phone Number</label>
-                                            <input type="tel" className="input-field" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-                                        </div>
-                                        <div className="form-group flex-1">
-                                            <label>Date of Birth</label>
-                                            <input type="date" className="input-field" value={formData.dateOfBirth} onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })} />
-                                        </div>
-                                        <div className="form-group flex-1 cursor-pointer">
-                                            <label>Gender</label>
-                                            <select className="input-field" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
-                                                <option>Male</option><option>Female</option><option>Other</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group flex-1 cursor-pointer">
-                                            <label>Marital Status</label>
-                                            <select className="input-field" value={formData.maritalStatus} onChange={e => setFormData({ ...formData, maritalStatus: e.target.value })}>
-                                                <option>Unmarried</option><option>Married</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group col-span-2">
-                                            <label>Full Address</label>
-                                            <textarea className="input-field min-h-[80px]" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })}></textarea>
-                                        </div>
-                                    </div>
-
-                                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mt-6">Work Details</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="form-group flex-1 cursor-pointer">
+                                        <div className="form-group col-span-2 cursor-pointer">
                                             <label>System Role</label>
                                             <select className="input-field" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}>
                                                 <option value="EMPLOYEE">Employee</option>
@@ -397,119 +394,67 @@ const Directory = () => {
                 )}
             </AnimatePresence>
 
-            {/* Edit Employee Modal */}
+            {/* Joiner Credentials Success Modal */}
             <AnimatePresence>
-                {showEditModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowEditModal(false)}>
+                {showSuccessModal && (
+                    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-md">
                         <motion.div
-                            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            onClick={e => e.stopPropagation()}
+                            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
                         >
-                            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
-                                <h2 className="text-xl font-bold">Edit Employee Details</h2>
-                                <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onClick={() => setShowEditModal(false)}>
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            <div className="p-6 overflow-y-auto">
-                                <form id="editEmployeeForm" onSubmit={handleEditSubmit} className="space-y-6">
-                                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Account Info</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="form-group flex-1">
-                                            <label>First Name</label>
-                                            <input type="text" required className="input-field" value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} />
-                                        </div>
-                                        <div className="form-group flex-1">
-                                            <label>Last Name</label>
-                                            <input type="text" required className="input-field" value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} />
-                                        </div>
-                                        <div className="form-group flex-1">
-                                            <label>Email Address</label>
-                                            <input type="email" required className="input-field" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-                                        </div>
-                                        <div className="form-group flex-1">
-                                            <label>Designation</label>
-                                            <input type="text" className="input-field" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} />
-                                        </div>
+                            <div className="p-8 text-center">
+                                <div className="bg-green-100 dark:bg-green-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle size={32} className="text-green-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold mb-2">Account Created!</h2>
+                                <p className="text-secondary text-sm mb-6">Give these credentials to the new joiner before triggering onboarding.</p>
+                                
+                                <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl space-y-3 mb-6 text-left border border-gray-100 dark:border-gray-700">
+                                    <div>
+                                        <div className="text-[10px] uppercase tracking-wider text-secondary font-bold mb-1">Email Address</div>
+                                        <div className="font-mono text-sm break-all">{createdUser?.email}</div>
                                     </div>
-
-                                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mt-6">Personal Details</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="form-group flex-1">
-                                            <label>Phone Number</label>
-                                            <input type="tel" className="input-field" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-                                        </div>
-                                        <div className="form-group flex-1">
-                                            <label>Date of Birth</label>
-                                            <input type="date" className="input-field" value={formData.dateOfBirth} onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })} />
-                                        </div>
-                                        <div className="form-group flex-1 cursor-pointer">
-                                            <label>Gender</label>
-                                            <select className="input-field" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
-                                                <option>Male</option><option>Female</option><option>Other</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group flex-1 cursor-pointer">
-                                            <label>Marital Status</label>
-                                            <select className="input-field" value={formData.maritalStatus} onChange={e => setFormData({ ...formData, maritalStatus: e.target.value })}>
-                                                <option>Unmarried</option><option>Married</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group col-span-2">
-                                            <label>Full Address</label>
-                                            <textarea className="input-field min-h-[80px]" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })}></textarea>
-                                        </div>
+                                    <div>
+                                        <div className="text-[10px] uppercase tracking-wider text-secondary font-bold mb-1">Temporary Password</div>
+                                        <div className="font-mono text-sm bg-accent/10 px-2 py-1 rounded inline-block">{createdUser?.password}</div>
                                     </div>
+                                </div>
 
-                                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mt-6">Work Details</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="form-group flex-1 cursor-pointer">
-                                            <label>System Role</label>
-                                            <select className="input-field" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}>
-                                                <option value="EMPLOYEE">Employee</option>
-                                                <option value="MANAGER">Manager</option>
-                                                <option value="FINANCE">Finance</option>
-                                                <option value="HR_ADMIN">HR Admin</option>
-                                                <option value="SUPER_ADMIN">Super Admin</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group flex-1 cursor-pointer">
-                                            <label>Status</label>
-                                            <select className="input-field" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
-                                                <option value="ACTIVE">Active</option>
-                                                <option value="INACTIVE">Resigned / Inactive</option>
-                                                <option value="PROBATION">Probation</option>
-                                                <option value="NOTICE_PERIOD">Notice Period</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    {formData.status === 'INACTIVE' && (
-                                        <>
-                                            <h3 className="text-sm font-semibold text-red-500 uppercase tracking-wider mt-6">Resignation Details</h3>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="form-group flex-1">
-                                                    <label>Resignation Date</label>
-                                                    <input type="date" className="input-field border-red-200" value={formData.resignationDate} onChange={e => setFormData({ ...formData, resignationDate: e.target.value })} />
-                                                </div>
-                                                <div className="form-group col-span-2">
-                                                    <label>Reason for Resignation</label>
-                                                    <textarea className="input-field border-red-200 min-h-[80px]" value={formData.resignationReason} onChange={e => setFormData({ ...formData, resignationReason: e.target.value })} placeholder="State the reason for resignation..."></textarea>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </form>
-                            </div>
-
-                            <div className="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3">
-                                <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>Cancel</button>
-                                <button type="submit" form="editEmployeeForm" disabled={isSubmitting} className="btn-primary">
-                                    {isSubmitting ? 'Saving Changes...' : 'Save Changes'}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button 
+                                        className="btn-secondary flex-center gap-2"
+                                        onClick={() => {
+                                            const text = `HEMS Login\nEmail: ${createdUser.email}\nPassword: ${createdUser.password}`;
+                                            navigator.clipboard.writeText(text);
+                                            alert('Credentials copied to clipboard!');
+                                        }}
+                                    >
+                                        Copy Details
+                                    </button>
+                                    <button 
+                                        className="btn-primary"
+                                        onClick={async () => {
+                                            try {
+                                                await api.post(`/onboarding/trigger/${createdUser.id}`);
+                                                alert('Onboarding Triggered successfully!');
+                                                setShowSuccessModal(false);
+                                                fetchEmployees();
+                                            } catch (err) {
+                                                alert('Failed: ' + (err.response?.data?.error || err.message));
+                                            }
+                                        }}
+                                    >
+                                        Trigger Onboarding
+                                    </button>
+                                </div>
+                                
+                                <button 
+                                    className="w-full mt-4 text-secondary text-sm hover:underline"
+                                    onClick={() => setShowSuccessModal(false)}
+                                >
+                                    Close & Do it Later
                                 </button>
                             </div>
                         </motion.div>

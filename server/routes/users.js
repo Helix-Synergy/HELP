@@ -45,7 +45,7 @@ router.post('/me/avatar', protect, upload.single('file'), async (req, res, next)
 // @access  Private
 router.put('/me', protect, async (req, res, next) => {
     try {
-        // We only allow certain fields to be updated by the user
+        // We allow all onboarding-related fields to be updated by the user
         const fieldsToUpdate = {
             firstName: req.body.firstName,
             lastName: req.body.lastName,
@@ -53,7 +53,17 @@ router.put('/me', protect, async (req, res, next) => {
             'contactDetails.address': req.body.address,
             dateOfBirth: req.body.dateOfBirth === '' ? null : req.body.dateOfBirth,
             gender: req.body.gender,
-            maritalStatus: req.body.maritalStatus
+            maritalStatus: req.body.maritalStatus,
+            fathersName: req.body.fathersName,
+            bloodGroup: req.body.bloodGroup,
+            aadharNumber: req.body.aadharNumber,
+            panNumber: req.body.panNumber,
+            pfNumber: req.body.pfNumber,
+            // ctc: req.body.ctc, // Usually CTC shouldn't be editable by the employee
+            qualification: req.body.qualification,
+            experienceYears: req.body.experienceYears,
+            bankDetails: req.body.bankDetails,
+            insuranceDetails: req.body.insuranceDetails
         };
 
         // Clean up undefined fields
@@ -87,7 +97,11 @@ router.get('/', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOY
 // @access  Private/HR_ADMIN/SUPER_ADMIN/MANAGER
 router.post('/', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), async (req, res, next) => {
     try {
-        const { firstName, lastName, email, password, role, phone, address, dateOfBirth, gender, maritalStatus } = req.body;
+        const { firstName, lastName, email, password, role } = req.body;
+
+        if (!firstName || !lastName || !email || !password) {
+            return res.status(400).json({ success: false, error: 'Please provide name, email and password' });
+        }
 
         const userExists = await User.findOne({ email });
         if (userExists) {
@@ -97,20 +111,21 @@ router.post('/', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), async
         const count = await User.countDocuments();
         const employeeId = `HEMS-${(count + 1).toString().padStart(4, '0')}`;
 
+        // Create user with basic info - other details will be filled during onboarding
         const user = await User.create({
             employeeId,
             firstName,
             lastName,
             email,
             password,
-            role,
-            contactDetails: {
-                phone,
-                address
-            },
-            dateOfBirth,
-            gender,
-            maritalStatus
+            role: role || 'EMPLOYEE',
+            status: 'ACTIVE',
+            onboardingStatus: 'NOT_JOINED',
+            workMode: req.body.workMode || 'WFO',
+            performanceFactor: req.body.performanceFactor !== undefined ? req.body.performanceFactor : 100,
+            isPFApplicable: req.body.isPFApplicable !== undefined ? req.body.isPFApplicable : true,
+            isBonusApplicable: req.body.isBonusApplicable !== undefined ? req.body.isBonusApplicable : true,
+            taxPercent: req.body.taxPercent || 0
         });
 
         res.status(201).json({ success: true, data: user });
@@ -151,9 +166,17 @@ router.put('/:id', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), asy
             dateOfBirth: req.body.dateOfBirth === '' ? null : req.body.dateOfBirth,
             gender: req.body.gender,
             maritalStatus: req.body.maritalStatus,
+            ctc: req.body.ctc,
             resignationDate: req.body.resignationDate === '' ? null : req.body.resignationDate,
-            resignationReason: req.body.resignationReason
+            resignationReason: req.body.resignationReason,
+            workMode: req.body.workMode,
+            performanceFactor: req.body.performanceFactor,
+            isPFApplicable: req.body.isPFApplicable,
+            isBonusApplicable: req.body.isBonusApplicable,
+            taxPercent: req.body.taxPercent
         };
+
+        console.log(`[UpdateUser] Updating user ${req.params.id} with:`, fieldsToUpdate);
 
         // Clean up undefined fields
         Object.keys(fieldsToUpdate).forEach(key => fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]);
@@ -162,6 +185,11 @@ router.put('/:id', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), asy
             new: true,
             runValidators: true
         });
+
+        console.log(`[UpdateUser] User ${req.params.id} updated result:`, user ? { 
+            performanceFactor: user.performanceFactor, 
+            workMode: user.workMode 
+        } : 'User not found');
 
         if (!user) {
             return res.status(404).json({ success: false, error: 'User not found' });

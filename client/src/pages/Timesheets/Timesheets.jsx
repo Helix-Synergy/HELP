@@ -11,6 +11,7 @@ const Timesheets = () => {
     const [status, setStatus] = useState('DRAFT');
     const [isLoading, setIsLoading] = useState(false);
     const [isManager, setIsManager] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const [teamTimesheets, setTeamTimesheets] = useState([]);
 
     const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -20,9 +21,11 @@ const Timesheets = () => {
         const userStr = localStorage.getItem('hems_user');
         const user = userStr ? JSON.parse(userStr) : null;
         const managerFlag = ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(user?.role);
+        const adminFlag = user?.role === 'SUPER_ADMIN';
         setIsManager(managerFlag);
+        setIsAdmin(adminFlag);
 
-        fetchData(managerFlag);
+        fetchData(managerFlag, adminFlag);
     }, [currentDate]);
 
     // Compute Date Range String
@@ -42,39 +45,41 @@ const Timesheets = () => {
 
     const weekBounds = getWeekBoundaries(currentDate);
 
-    const fetchData = async (managerFlag = isManager) => {
+    const fetchData = async (managerFlag = isManager, adminFlag = isAdmin) => {
         try {
-            // Get Projects
-            const projRes = await api.get('/projects');
-            setProjects(projRes.data.data);
+            if (!adminFlag) {
+                // Get Projects
+                const projRes = await api.get('/projects');
+                setProjects(projRes.data.data);
 
-            // Get My Timesheets
-            const myRes = await api.get('/timesheets/me');
-            if (myRes.data.data.length > 0) {
-                // Find timesheet matching this week
-                const currentSheet = myRes.data.data.find(sheet => {
-                    const sheetDate = new Date(sheet.weekStartDate);
-                    return sheetDate.getTime() === weekBounds.monday.getTime();
-                });
+                // Get My Timesheets
+                const myRes = await api.get('/timesheets/me');
+                if (myRes.data.data.length > 0) {
+                    // Find timesheet matching this week
+                    const currentSheet = myRes.data.data.find(sheet => {
+                        const sheetDate = new Date(sheet.weekStartDate);
+                        return sheetDate.getTime() === weekBounds.monday.getTime();
+                    });
 
-                if (currentSheet) {
-                    setTimesheetData(currentSheet.entries.map((entry, index) => ({
-                        id: index,
-                        projectId: entry.project?._id,
-                        task: entry.taskDescription,
-                        hours: [
-                            entry.hours.monday || '', entry.hours.tuesday || '', entry.hours.wednesday || '',
-                            entry.hours.thursday || '', entry.hours.friday || '', entry.hours.saturday || '', entry.hours.sunday || ''
-                        ]
-                    })));
-                    setStatus(currentSheet.status);
+                    if (currentSheet) {
+                        setTimesheetData(currentSheet.entries.map((entry, index) => ({
+                            id: index,
+                            projectId: entry.project?._id,
+                            task: entry.taskDescription,
+                            hours: [
+                                entry.hours.monday || '', entry.hours.tuesday || '', entry.hours.wednesday || '',
+                                entry.hours.thursday || '', entry.hours.friday || '', entry.hours.saturday || '', entry.hours.sunday || ''
+                            ]
+                        })));
+                        setStatus(currentSheet.status);
+                    } else {
+                        setTimesheetData([]);
+                        setStatus('DRAFT');
+                    }
                 } else {
                     setTimesheetData([]);
                     setStatus('DRAFT');
                 }
-            } else {
-                setTimesheetData([]);
-                setStatus('DRAFT');
             }
 
             // Get Team Timesheets if Manager
@@ -196,7 +201,8 @@ const Timesheets = () => {
             await api.put(`/timesheets/${id}/status`, { status: newStatus });
             fetchData();
         } catch (err) {
-            alert('Failed to update timesheet status');
+            console.error('Approval failed:', err);
+            alert('Failed to update timesheet status: ' + (err.response?.data?.error || err.message));
         }
     };
 
@@ -213,9 +219,11 @@ const Timesheets = () => {
             <div className="directory-header">
                 <div>
                     <h1 className="page-title">Timesheets</h1>
-                    <p className="page-subtitle">Log your daily hours, track billable projects, and submit for approval.</p>
+                    <p className="page-subtitle">
+                        {isAdmin ? 'View and manage team timesheet submissions.' : 'Log your daily hours, track billable projects, and submit for approval.'}
+                    </p>
                 </div>
-                {!isLocked && (
+                {!isLocked && !isAdmin && (
                     <div className="header-actions-group">
                         <button className="btn-secondary" onClick={() => saveOrSubmit('DRAFT')} disabled={isLoading}>
                             <Save size={18} /> {isLoading ? 'Saving...' : 'Save Draft'}
@@ -227,7 +235,9 @@ const Timesheets = () => {
                 )}
             </div>
 
-            <div className="card timesheet-card mb-4">
+            {!isAdmin && (
+                <>
+                <div className="card timesheet-card mb-4">
                 <div className="timesheet-header-controls">
                     <div className="week-selector">
                         <button className="btn-secondary" onClick={handlePrevWeek}>&lt;</button>
@@ -335,6 +345,8 @@ const Timesheets = () => {
                     </table>
                 </div>
             </div>
+            </>
+            )}
 
             {isManager && (
                 <div className="card mt-6">

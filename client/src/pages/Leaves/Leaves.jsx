@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Plus, Clock, FileText, CheckCircle, XCircle, AlertCircle, CalendarOff, Check, X } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -13,22 +14,16 @@ const LEAVE_TYPES = [
 ];
 
 const Leaves = () => {
-    const [showApplyModal, setShowApplyModal] = useState(false);
+    const navigate = useNavigate();
     const [leaveHistory, setLeaveHistory] = useState([]);
     const [teamLeaves, setTeamLeaves] = useState([]);
     const [balances, setBalances] = useState([]);
+    const [allBalances, setAllBalances] = useState([]);
 
-    // Auth Check
     const userStr = localStorage.getItem('hems_user');
     const user = userStr ? JSON.parse(userStr) : null;
     const isManager = ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(user?.role);
-
-    const [formData, setFormData] = useState({
-        leaveType: 'CASUAL_LEAVE',
-        startDate: '',
-        endDate: '',
-        reason: ''
-    });
+    const isAdmin = user?.role === 'SUPER_ADMIN';
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -37,28 +32,38 @@ const Leaves = () => {
 
     const fetchData = async () => {
         try {
-            const selfRes = await api.get('/leaves/me');
-            setLeaveHistory(selfRes.data.data);
-
-            const balanceRes = await api.get('/leaves/balance');
-            const rawBalances = balanceRes.data.data.balances;
-            
-            const formattedBalances = LEAVE_TYPES.map(config => {
-                const item = rawBalances.find(b => b.leaveType === config.type);
-                const used = item?.used || 0;
-                const total = item?.totalAllocated || config.defaultTotal;
-                return {
-                    ...config,
-                    taken: used,
-                    available: total - used,
-                    total: total
-                };
-            });
-            setBalances(formattedBalances);
-
-            if (isManager) {
+            if (isAdmin) {
+                // Admin gets all balances and all requests
+                const allBalRes = await api.get('/leaves/all-balances');
+                setAllBalances(allBalRes.data.data);
+                
                 const teamRes = await api.get('/leaves');
                 setTeamLeaves(teamRes.data.data);
+            } else {
+                const selfRes = await api.get('/leaves/me');
+                setLeaveHistory(selfRes.data.data);
+
+                const balanceRes = await api.get('/leaves/balance');
+                const rawBalances = balanceRes.data.data.balances;
+                
+                const formattedBalances = LEAVE_TYPES.map(config => {
+                    const item = rawBalances.find(b => b.leaveType === config.type);
+                    const used = item?.used || 0;
+                    const total = item?.totalAllocated || config.defaultTotal;
+                    return {
+                        ...config,
+                        taken: used,
+                        available: total - used,
+                        total: total
+                    };
+                });
+                setBalances(formattedBalances);
+
+                // Managers also need to get team requests
+                if (isManager) {
+                    const teamRes = await api.get('/leaves');
+                    setTeamLeaves(teamRes.data.data);
+                }
             }
         } catch (err) {
             console.error('Failed to fetch data:', err);
@@ -123,102 +128,140 @@ const Leaves = () => {
             <div className="directory-header">
                 <div>
                     <h1 className="page-title">Leave Management</h1>
-                    <p className="page-subtitle">View your balances, apply for time off, and track holiday calendars.</p>
+                    <p className="page-subtitle">
+                        {isAdmin ? 'View employee leave balances and manage approvals.' : 'View your balances, apply for time off, and track holiday calendars.'}
+                    </p>
                 </div>
-                <button className="btn-primary" onClick={() => setShowApplyModal(true)}>
-                    <Plus size={18} /> Apply for Leave
-                </button>
+                {!isAdmin && (
+                    <button className="btn-primary" onClick={() => navigate('/leaves/apply')}>
+                        <Plus size={18} /> Apply for Leave
+                    </button>
+                )}
             </div>
 
-            <div className="dashboard-row">
-                {/* Balances Section */}
-                <div className="card balances-card">
-                    <div className="card-header">
-                        <h3>Leave Balances</h3>
-                    </div>
-                    <div className="balances-list">
-                        {balances.map((leave, idx) => (
-                            <div key={idx} className="balance-item">
-                                <div className="balance-info">
-                                    <div className="balance-dot" style={{ backgroundColor: leave.color }}></div>
-                                    <span className="balance-name">{leave.name}</span>
+            {isAdmin ? (
+                <>
+                    <h3 className="section-title mt-4">Employee Leave Balances</h3>
+                    <div className="admin-balances-grid">
+                        {allBalances.map((item) => (
+                            <div key={item.user._id} className="card emp-balance-card">
+                                <div className="emp-balance-header">
+                                    <div className="emp-info">
+                                        <div className="emp-avatar">{item.user.firstName[0]}{item.user.lastName[0]}</div>
+                                        <div>
+                                            <h4>{item.user.firstName} {item.user.lastName}</h4>
+                                            <span className="text-secondary">{item.user.employeeId}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="balance-stats">
-                                    <span className="balance-total">{leave.total} <small>Total</small></span>
-                                    <span className="balance-divider">|</span>
-                                    <span className="balance-avail" style={{ color: 'var(--success)' }}>{leave.available} <small>Available</small></span>
-                                    <span className="balance-divider">|</span>
-                                    <span className="balance-taken" style={{ color: 'var(--warning)' }}>{leave.taken} <small>Taken</small></span>
-                                </div>
-                                {/* Visual Progress Bar */}
-                                <div className="balance-progress-bg">
-                                    <motion.div
-                                        className="balance-progress-fill"
-                                        style={{ backgroundColor: leave.color }}
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(leave.taken / leave.total) * 100}%` }}
-                                        transition={{ duration: 1, delay: 0.2 }}
-                                    />
+                                <div className="emp-balance-stats mt-3">
+                                    {item.balances.map((b, idx) => (
+                                        <div key={idx} className="mini-stat">
+                                            <span className="stat-lbl">{b.leaveType.replace('_', ' ')}</span>
+                                            <span className="stat-val">
+                                                <strong>{b.totalAllocated - b.used}</strong> / {b.totalAllocated}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         ))}
+                        {allBalances.length === 0 && <p className="text-muted">Loading employee balances...</p>}
                     </div>
-                </div>
-
-                {/* Mini Calendar / Action Card */}
-                <div className="card utility-card">
-                    <div className="card-header">
-                        <h3>Upcoming Organization Holidays</h3>
-                    </div>
-                    <div className="holiday-list">
-                        <div className="holiday-item">
-                            <div className="holiday-date">Mar 30</div>
-                            <div className="holiday-details">
-                                <h4>Good Friday</h4>
-                                <p>National Holiday</p>
+                </>
+            ) : (
+                <>
+                    <div className="dashboard-row">
+                        {/* Balances Section */}
+                        <div className="card balances-card">
+                            <div className="card-header">
+                                <h3>Leave Balances</h3>
+                            </div>
+                            <div className="balances-list">
+                                {balances.map((leave, idx) => (
+                                    <div key={idx} className="balance-item">
+                                        <div className="balance-info">
+                                            <div className="balance-dot" style={{ backgroundColor: leave.color }}></div>
+                                            <span className="balance-name">{leave.name}</span>
+                                        </div>
+                                        <div className="balance-stats">
+                                            <span className="balance-total">{leave.total} <small>Total</small></span>
+                                            <span className="balance-divider">|</span>
+                                            <span className="balance-avail" style={{ color: 'var(--success)' }}>{leave.available} <small>Available</small></span>
+                                            <span className="balance-divider">|</span>
+                                            <span className="balance-taken" style={{ color: 'var(--warning)' }}>{leave.taken} <small>Taken</small></span>
+                                        </div>
+                                        {/* Visual Progress Bar */}
+                                        <div className="balance-progress-bg">
+                                            <motion.div
+                                                className="balance-progress-fill"
+                                                style={{ backgroundColor: leave.color }}
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${(leave.taken / leave.total) * 100}%` }}
+                                                transition={{ duration: 1, delay: 0.2 }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <div className="holiday-item">
-                            <div className="holiday-date">May 01</div>
-                            <div className="holiday-details">
-                                <h4>Labor Day</h4>
-                                <p>National Holiday</p>
+
+                        {/* Mini Calendar / Action Card */}
+                        <div className="card utility-card">
+                            <div className="card-header">
+                                <h3>Upcoming Organization Holidays</h3>
                             </div>
+                            <div className="holiday-list">
+                                <div className="holiday-item">
+                                    <div className="holiday-date">Mar 30</div>
+                                    <div className="holiday-details">
+                                        <h4>Good Friday</h4>
+                                        <p>National Holiday</p>
+                                    </div>
+                                </div>
+                                <div className="holiday-item">
+                                    <div className="holiday-date">May 01</div>
+                                    <div className="holiday-details">
+                                        <h4>Labor Day</h4>
+                                        <p>National Holiday</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button className="btn-secondary w-100 mt-4"><CalendarOff size={16} /> View Full Calendar</button>
                         </div>
                     </div>
-                    <button className="btn-secondary w-100 mt-4"><CalendarOff size={16} /> View Full Calendar</button>
-                </div>
-            </div>
 
-            {/* My Leaves */}
-            <h3 className="section-title mt-4">My Leave History & Requests</h3>
-            <div className="card p-0">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Leave Type</th>
-                            <th>Duration</th>
-                            <th>Days</th>
-                            <th>Status</th>
-                            <th>Reason</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {leaveHistory.map(record => (
-                            <tr key={record._id}>
-                                <td><strong>{record.leaveType.replace('_', ' ')}</strong></td>
-                                <td>{formatDate(record.startDate)} - {formatDate(record.endDate)}</td>
-                                <td>{calcDays(record.startDate, record.endDate)} {calcDays(record.startDate, record.endDate) === 1 ? 'Day' : 'Days'}</td>
-                                <td>{getStatusBadge(record.status)}</td>
-                                <td><span className="text-secondary">{record.reason || 'None provided'}</span></td>
-                            </tr>
-                        ))}
-                        {leaveHistory.length === 0 && (
-                            <tr><td colSpan="5" className="text-center py-4 text-muted">You have not applied for any leaves yet.</td></tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                    {/* My Leaves */}
+                    <h3 className="section-title mt-4">My Leave History & Requests</h3>
+                    <div className="card p-0">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>Duration</th>
+                                    <th>Days</th>
+                                    <th>Status</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {leaveHistory.map(record => (
+                                    <tr key={record._id}>
+                                        <td><strong>{record.leaveType.replace('_', ' ')}</strong></td>
+                                        <td>{formatDate(record.startDate)} - {formatDate(record.endDate)}</td>
+                                        <td>{calcDays(record.startDate, record.endDate)} {calcDays(record.startDate, record.endDate) === 1 ? 'Day' : 'Days'}</td>
+                                        <td>{getStatusBadge(record.status)}</td>
+                                        <td><span className="text-secondary">{record.reason || 'None provided'}</span></td>
+                                    </tr>
+                                ))}
+                                {leaveHistory.length === 0 && (
+                                    <tr><td colSpan="5" className="text-center py-4 text-muted">You have not applied for any leaves yet.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
 
             {/* Team Approvals (Managers Only) */}
             {isManager && (
@@ -272,76 +315,6 @@ const Leaves = () => {
                     </div>
                 </>
             )}
-
-            {/* Leave Application Modal */}
-            <AnimatePresence>
-                {showApplyModal && (
-                    <div className="modal-backdrop">
-                        <motion.div
-                            className="card modal-content"
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                        >
-                            <div className="modal-header">
-                                <h2>Apply for Leave</h2>
-                                <button className="icon-btn-small" onClick={() => setShowApplyModal(false)}><XCircle size={20} /></button>
-                            </div>
-                            <div className="modal-body">
-                                <div className="form-group">
-                                    <label>Leave Type</label>
-                                    <select
-                                        className="input-field"
-                                        value={formData.leaveType}
-                                        onChange={(e) => setFormData({ ...formData, leaveType: e.target.value })}
-                                    >
-                                        <option value="CASUAL_LEAVE">Casual Leave</option>
-                                        <option value="SICK_LEAVE">Sick Leave</option>
-                                        <option value="EARNED_LEAVE">Earned Leave</option>
-                                    </select>
-                                </div>
-                                <div className="form-row">
-                                    <div className="form-group flex-1">
-                                        <label>Start Date</label>
-                                        <input
-                                            type="date"
-                                            className="input-field"
-                                            value={formData.startDate}
-                                            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="form-group flex-1">
-                                        <label>End Date</label>
-                                        <input
-                                            type="date"
-                                            className="input-field"
-                                            value={formData.endDate}
-                                            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label>Reason for Leave</label>
-                                    <textarea
-                                        className="input-field"
-                                        rows="3"
-                                        placeholder="Briefly describe why you are taking leave..."
-                                        value={formData.reason}
-                                        onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                                        required
-                                    ></textarea>
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn-secondary" onClick={() => setShowApplyModal(false)} disabled={isLoading}>Cancel</button>
-                                <button className="btn-primary" onClick={handleSubmitLeave} disabled={isLoading}>
-                                    {isLoading ? 'Submitting...' : 'Submit Application'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
 
         </motion.div>
     );

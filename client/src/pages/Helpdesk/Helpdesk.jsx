@@ -11,6 +11,7 @@ const Helpdesk = () => {
     const [user, setUser] = useState(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [viewMode, setViewMode] = useState('my'); // 'my' or 'all'
+    const [staff, setStaff] = useState([]);
 
     // Modals
     const [showNewTicketModal, setShowNewTicketModal] = useState(false);
@@ -42,6 +43,11 @@ const Helpdesk = () => {
             if (isUserAdmin || isAdmin) {
                 const allRes = await api.get('/helpdesk/all');
                 setAllTickets(allRes.data.data);
+                
+                // Fetch staff for assignment
+                const staffRes = await api.get('/users');
+                // Show all employees as potential assignees
+                setStaff(staffRes.data.data);
             }
         } catch (error) {
             console.error('Error fetching tickets', error);
@@ -87,6 +93,17 @@ const Helpdesk = () => {
         }
     };
 
+    const handleAssign = async (userId) => {
+        try {
+            const res = await api.put(`/helpdesk/${activeTicket._id}`, { assignedTo: userId });
+            setActiveTicket(res.data.data);
+            fetchTickets();
+            alert('Ticket assigned successfully');
+        } catch (error) {
+            alert('Failed to assign ticket');
+        }
+    };
+
     const getPriorityColor = (priority) => {
         switch (priority) {
             case 'CRITICAL': return 'bg-red-100 text-red-800 border-red-200';
@@ -122,6 +139,9 @@ const Helpdesk = () => {
                 </div>
                 <div className="flex items-center gap-3 text-xs text-gray-500">
                     <span className="flex items-center gap-1">{getStatusIcon(ticket.status)} {ticket.status.replace('_', ' ')}</span>
+                    {ticket.assignedTo?._id === user?.id && (
+                        <span className="bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded text-[9px] uppercase border border-amber-200">Assigned To Me</span>
+                    )}
                     {viewMode === 'all' && (
                         <>
                             <span>•</span>
@@ -205,10 +225,34 @@ const Helpdesk = () => {
                                         <span className="flex items-center gap-1.5">{getStatusIcon(activeTicket.status)} <strong className="text-gray-700">{activeTicket.status.replace('_', ' ')}</strong></span>
                                         <span>•</span>
                                         <span className="text-gray-600">{activeTicket.category.replace('_', ' ')}</span>
+                                        {activeTicket.assignedTo && (
+                                            <>
+                                                <span>•</span>
+                                                <span className="bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-md text-[11px] font-bold flex items-center gap-1">
+                                                    <User size={12} /> {activeTicket.assignedTo.firstName} {activeTicket.assignedTo.lastName}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    {(activeTicket.status !== 'RESOLVED' && activeTicket.status !== 'CLOSED') && (
+                                <div className="flex gap-2 items-center">
+                                    {isAdmin && (
+                                        <div className="flex items-center gap-2 mr-4 bg-white border border-gray-200 p-1.5 rounded-lg shadow-sm">
+                                            <span className="text-xs font-bold text-gray-500 ml-1">ASSIGN TO:</span>
+                                            <select 
+                                                className="text-xs font-semibold bg-transparent border-none focus:ring-0 cursor-pointer text-blue-600"
+                                                value={activeTicket.assignedTo?._id || ''}
+                                                onChange={(e) => handleAssign(e.target.value)}
+                                            >
+                                                <option value="">Unassigned</option>
+                                                {staff.map(u => (
+                                                    <option key={u._id} value={u._id}>{u.firstName} {u.lastName} ({u.role.replace('_', ' ')})</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+                                    {/* Mark Resolved - allowed for Admin OR Assigned Representative */}
+                                    {(activeTicket.status !== 'RESOLVED' && activeTicket.status !== 'CLOSED') && (isAdmin || activeTicket.assignedTo?._id === user?.id) && (
                                         <button onClick={() => handleStatusChange('RESOLVED')} className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm py-2 px-4 rounded-lg shadow-sm hover:shadow transition-colors flex items-center gap-2">
                                             <CheckCircle size={16} /> Mark Resolved
                                         </button>

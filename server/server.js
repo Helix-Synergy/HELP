@@ -5,6 +5,8 @@ const dotenv = require('dotenv');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const mongoSanitize = require('express-mongo-sanitize');
+const rateLimit = require('express-rate-limit');
 
 // Load env vars
 dotenv.config();
@@ -22,6 +24,30 @@ app.use(helmet({
 }));
 app.use(morgan('dev'));
 app.use(cookieParser());
+
+// Express 5 compatibility workaround for sanitization middlewares
+app.use((req, res, next) => {
+  if (req.query) {
+    Object.defineProperty(req, 'query', {
+      value: { ...req.query },
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  }
+  next();
+});
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Rate limiting (100 req per 10 min)
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, 
+  max: 100,
+  message: 'Too many requests from this IP, please try again after 10 minutes'
+});
+app.use('/api', limiter);
 
 // Serve static directory for uploads
 const path = require('path');
@@ -48,6 +74,7 @@ app.use('/api/v1/payroll', require('./routes/payroll'));
 app.use('/api/v1/helpdesk', require('./routes/helpdesk'));
 app.use('/api/v1/assets', require('./routes/assets'));
 app.use('/api/v1/learning', require('./routes/learning'));
+app.use('/api/v1/dashboard', require('./routes/dashboard'));
 
 // Basic health check
 app.get('/', (req, res) => {

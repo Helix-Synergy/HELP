@@ -81,3 +81,37 @@ exports.updateLeaveStatus = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({ success: true, data: leave });
 });
+
+// @desc    Get all leave balances (Admin only)
+// @route   GET /api/v1/leaves/all-balances
+// @access  Private (Admin/Manager)
+exports.getAllLeaveBalances = asyncHandler(async (req, res, next) => {
+    const User = require('../models/User');
+    
+    // Get all active users
+    const users = await User.find({ status: 'ACTIVE' }).select('firstName lastName employeeId');
+    
+    // Get all leave balances for the current year
+    const currentYear = new Date().getFullYear();
+    const balances = await LeaveBalance.find({ year: currentYear });
+    
+    // Map them together
+    const userBalancesMap = {};
+    for (const b of balances) {
+        userBalancesMap[b.user.toString()] = b.balances;
+    }
+    
+    const formattedData = users.map(u => {
+        const userBal = userBalancesMap[u._id.toString()] || [
+            { leaveType: 'CASUAL_LEAVE', totalAllocated: 10, used: 0 },
+            { leaveType: 'SICK_LEAVE', totalAllocated: 12, used: 0 },
+            { leaveType: 'EARNED_LEAVE', totalAllocated: 15, used: 0 }
+        ];
+        return {
+            user: { _id: u._id, firstName: u.firstName, lastName: u.lastName, employeeId: u.employeeId },
+            balances: userBal
+        };
+    });
+
+    res.status(200).json({ success: true, count: formattedData.length, data: formattedData });
+});

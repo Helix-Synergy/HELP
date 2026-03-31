@@ -12,7 +12,11 @@ const Settings = () => {
     const fileInputRef = useRef(null);
 
     const [editForm, setEditForm] = useState({
-        firstName: '', lastName: '', phone: '', address: '', dateOfBirth: '', gender: 'Male', maritalStatus: 'Unmarried'
+        firstName: '', lastName: '', phone: '', address: '', dateOfBirth: '', gender: 'Male', maritalStatus: 'Unmarried',
+        fathersName: '', bloodGroup: '', aadharNumber: '', panNumber: '',
+        pfNumber: '', ctc: '', qualification: '', experienceYears: '',
+        bankDetails: { accountHolderName: '', accountNumber: '', bankName: '', ifscCode: '' },
+        insuranceDetails: { policyType: '', policyNumber: '' }
     });
 
     const tabs = [
@@ -26,17 +30,36 @@ const Settings = () => {
         const fetchUser = async () => {
             try {
                 const res = await api.get('/users/me');
-                setUser(res.data.data);
+                const userData = res.data.data;
+                setUser(userData);
                 setEditForm({
-                    firstName: res.data.data.firstName || '',
-                    lastName: res.data.data.lastName || '',
-                    phone: res.data.data.contactDetails?.phone || '',
-                    address: res.data.data.contactDetails?.address || '',
-                    dateOfBirth: res.data.data.dateOfBirth ? res.data.data.dateOfBirth.split('T')[0] : '',
-                    gender: res.data.data.gender || 'Male',
-                    maritalStatus: res.data.data.maritalStatus || 'Unmarried'
+                    firstName: userData.firstName || '',
+                    lastName: userData.lastName || '',
+                    phone: userData.contactDetails?.phone || '',
+                    address: userData.contactDetails?.address || '',
+                    dateOfBirth: userData.dateOfBirth ? userData.dateOfBirth.split('T')[0] : '',
+                    gender: userData.gender || 'Male',
+                    maritalStatus: userData.maritalStatus || 'Unmarried',
+                    fathersName: userData.fathersName || '',
+                    bloodGroup: userData.bloodGroup || '',
+                    aadharNumber: userData.aadharNumber || '',
+                    panNumber: userData.panNumber || '',
+                    pfNumber: userData.pfNumber || '',
+                    ctc: userData.ctc || '',
+                    qualification: userData.qualification || '',
+                    experienceYears: userData.experienceYears || '',
+                    bankDetails: {
+                        accountHolderName: userData.bankDetails?.accountHolderName || '',
+                        accountNumber: userData.bankDetails?.accountNumber || '',
+                        bankName: userData.bankDetails?.bankName || '',
+                        ifscCode: userData.bankDetails?.ifscCode || ''
+                    },
+                    insuranceDetails: {
+                        policyType: userData.insuranceDetails?.policyType || '',
+                        policyNumber: userData.insuranceDetails?.policyNumber || ''
+                    }
                 });
-                localStorage.setItem('hems_user', JSON.stringify(res.data.data));
+                localStorage.setItem('hems_user', JSON.stringify(userData));
             } catch (err) {
                 console.error(err);
             }
@@ -74,20 +97,16 @@ const Settings = () => {
         try {
             if (activeTab === 'profile') {
                 const res = await api.put('/users/me', {
-                    firstName: editForm.firstName,
-                    lastName: editForm.lastName,
+                    ...editForm,
                     phone: editForm.phone,
-                    address: editForm.address,
-                    dateOfBirth: editForm.dateOfBirth,
-                    gender: editForm.gender,
-                    maritalStatus: editForm.maritalStatus
+                    address: editForm.address
                 });
                 setUser(res.data.data);
                 localStorage.setItem('hems_user', JSON.stringify(res.data.data));
                 window.dispatchEvent(new Event('userUpdated'));
                 alert('Profile updated successfully!');
             } else {
-                alert('Preferences saved successfully!'); // Mock save for other tabs
+                alert('Preferences saved successfully!'); 
             }
         } catch (error) {
             console.error('Save failed', error);
@@ -134,7 +153,7 @@ const Settings = () => {
                             <h3 className="panel-title">Personal Information</h3>
 
                             {user ? (
-                                <>
+                                <div className="space-y-8">
                                     <div className="profile-edit-header">
                                         <div className="relative group">
                                             {user.profilePicture && !user.profilePicture.includes('ui-avatars') ? (
@@ -161,74 +180,81 @@ const Settings = () => {
                                                 {isUploading ? <div className="spinner w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div> : <UploadCloud size={16} />}
                                                 {isUploading ? 'Uploading...' : 'Upload New Picture'}
                                             </button>
-                                            <button className="text-btn text-danger ml-4">Remove</button>
                                         </div>
                                     </div>
 
-                                    <div className="form-row mt-6">
-                                        <div className="form-group flex-1">
-                                            <label>First Name</label>
-                                            <input
-                                                type="text"
-                                                className="input-field"
-                                                value={editForm.firstName}
-                                                onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                                            />
+                                    <section>
+                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-4 font-bold">Account & Identity</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group"><label>First Name</label><input type="text" className="input-field" value={editForm.firstName} onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })} /></div>
+                                            <div className="form-group"><label>Last Name</label><input type="text" className="input-field" value={editForm.lastName} onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })} /></div>
+                                            <div className="form-group"><label>Email</label><input type="email" className="input-field bg-gray-50" value={user.email} disabled /></div>
+                                            <div className="form-group"><label>Employee ID</label><input type="text" className="input-field bg-gray-50" value={user.employeeId} disabled /></div>
                                         </div>
-                                        <div className="form-group flex-1">
-                                            <label>Last Name</label>
-                                            <input
-                                                type="text"
-                                                className="input-field"
-                                                value={editForm.lastName}
-                                                onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                                            />
+                                    </section>
+
+                                    <section>
+                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-4 font-bold">Personal Details</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group"><label>Father's Name</label><input type="text" className="input-field" value={editForm.fathersName} onChange={(e) => setEditForm({ ...editForm, fathersName: e.target.value })} /></div>
+                                            <div className="form-group"><label>Date of Birth</label><input type="date" className="input-field" value={editForm.dateOfBirth} onChange={e => setEditForm({ ...editForm, dateOfBirth: e.target.value })} /></div>
+                                            <div className="form-group"><label>Blood Group</label>
+                                                <select className="input-field" value={editForm.bloodGroup} onChange={e => setEditForm({ ...editForm, bloodGroup: e.target.value })}>
+                                                    <option value="">Select</option>
+                                                    {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="form-group"><label>Phone Number</label><input type="tel" className="input-field" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></div>
+                                            <div className="form-group"><label>Gender</label>
+                                                <select className="input-field" value={editForm.gender} onChange={e => setEditForm({ ...editForm, gender: e.target.value })}>
+                                                    <option>Male</option><option>Female</option><option>Other</option>
+                                                </select>
+                                            </div>
+                                            <div className="form-group"><label>Marital Status</label>
+                                                <select className="input-field" value={editForm.maritalStatus} onChange={e => setEditForm({ ...editForm, maritalStatus: e.target.value })}>
+                                                    <option>Unmarried</option><option>Married</option>
+                                                </select>
+                                            </div>
+                                            <div className="form-group col-span-2"><label>Full Address</label><textarea className="input-field min-h-[80px]" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })}></textarea></div>
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 mt-2">
-                                        <div className="form-group flex-1">
-                                            <label>Email Address</label>
-                                            <input type="email" className="input-field" defaultValue={user.email} disabled />
-                                            <small className="text-secondary mt-1 block">Email changes require admin approval.</small>
+                                    </section>
+
+                                    <section>
+                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-4 font-bold">Government ID & Tax</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group"><label>Aadhar Number</label><input type="text" className="input-field" value={editForm.aadharNumber} onChange={(e) => setEditForm({ ...editForm, aadharNumber: e.target.value })} /></div>
+                                            <div className="form-group"><label>PAN Number</label><input type="text" className="input-field" value={editForm.panNumber} onChange={(e) => setEditForm({ ...editForm, panNumber: e.target.value })} /></div>
+                                            <div className="form-group"><label>PF Number</label><input type="text" className="input-field" value={editForm.pfNumber} onChange={(e) => setEditForm({ ...editForm, pfNumber: e.target.value })} /></div>
+                                            <div className="form-group"><label>Annual CTC</label><input type="text" className="input-field bg-gray-50" value={editForm.ctc} disabled /></div>
                                         </div>
-                                        <div className="form-group flex-1">
-                                            <label>System Role</label>
-                                            <input type="text" className="input-field capitalize" defaultValue={user.role.toLowerCase().replace('_', ' ')} disabled />
+                                    </section>
+
+                                    <section>
+                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-4 font-bold">Professional Details</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group"><label>Highest Qualification</label><input type="text" className="input-field" value={editForm.qualification} onChange={(e) => setEditForm({ ...editForm, qualification: e.target.value })} /></div>
+                                            <div className="form-group"><label>Total Experience</label><input type="text" className="input-field" value={editForm.experienceYears} onChange={(e) => setEditForm({ ...editForm, experienceYears: e.target.value })} /></div>
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 mt-6">
-                                        <div className="form-group flex-1">
-                                            <label>Phone Number</label>
-                                            <input
-                                                type="tel"
-                                                className="input-field"
-                                                placeholder="+1 (555) 000-0000"
-                                                value={editForm.phone}
-                                                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                                            />
+                                    </section>
+
+                                    <section>
+                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-4 font-bold">Bank Account</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group"><label>Account Holder</label><input type="text" className="input-field" value={editForm.bankDetails?.accountHolderName} onChange={(e) => setEditForm({ ...editForm, bankDetails: { ...editForm.bankDetails, accountHolderName: e.target.value } })} /></div>
+                                            <div className="form-group"><label>Account Number</label><input type="text" className="input-field" value={editForm.bankDetails?.accountNumber} onChange={(e) => setEditForm({ ...editForm, bankDetails: { ...editForm.bankDetails, accountNumber: e.target.value } })} /></div>
+                                            <div className="form-group"><label>Bank Name</label><input type="text" className="input-field" value={editForm.bankDetails?.bankName} onChange={(e) => setEditForm({ ...editForm, bankDetails: { ...editForm.bankDetails, bankName: e.target.value } })} /></div>
+                                            <div className="form-group"><label>IFSC Code</label><input type="text" className="input-field" value={editForm.bankDetails?.ifscCode} onChange={(e) => setEditForm({ ...editForm, bankDetails: { ...editForm.bankDetails, ifscCode: e.target.value } })} /></div>
                                         </div>
-                                        <div className="form-group flex-1">
-                                            <label>Date of Birth</label>
-                                            <input type="date" className="input-field" value={editForm.dateOfBirth} onChange={e => setEditForm({ ...editForm, dateOfBirth: e.target.value })} />
+                                    </section>
+
+                                    <section>
+                                        <h4 className="text-xs uppercase tracking-widest text-secondary mb-4 font-bold">Insurance</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="form-group"><label>Policy Type</label><input type="text" className="input-field" value={editForm.insuranceDetails?.policyType} onChange={(e) => setEditForm({ ...editForm, insuranceDetails: { ...editForm.insuranceDetails, policyType: e.target.value } })} /></div>
+                                            <div className="form-group"><label>Policy Number</label><input type="text" className="input-field" value={editForm.insuranceDetails?.policyNumber} onChange={(e) => setEditForm({ ...editForm, insuranceDetails: { ...editForm.insuranceDetails, policyNumber: e.target.value } })} /></div>
                                         </div>
-                                        <div className="form-group flex-1 cursor-pointer">
-                                            <label>Gender</label>
-                                            <select className="input-field" value={editForm.gender} onChange={e => setEditForm({ ...editForm, gender: e.target.value })}>
-                                                <option>Male</option><option>Female</option><option>Other</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group flex-1 cursor-pointer">
-                                            <label>Marital Status</label>
-                                            <select className="input-field" value={editForm.maritalStatus} onChange={e => setEditForm({ ...editForm, maritalStatus: e.target.value })}>
-                                                <option>Unmarried</option><option>Married</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="form-group mt-4 mb-6">
-                                        <label>Full Address</label>
-                                        <textarea className="input-field min-h-[80px]" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })}></textarea>
-                                    </div>
-                                </>
+                                    </section>
+                                </div>
                             ) : (
                                 <div className="flex justify-center p-8"><div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-blue-600 animate-spin"></div></div>
                             )}

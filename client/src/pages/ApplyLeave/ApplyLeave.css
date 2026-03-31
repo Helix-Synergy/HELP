@@ -1,0 +1,207 @@
+.apply-leave-page {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+}
+
+.apply-leave-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.back-btn:hover {
+    background: var(--bg-hover);
+    color: var(--accent-primary);
+}
+
+.header-content {
+    flex: 1;
+}
+
+.breadcrumbs {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Grid Layout */
+.apply-leave-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 2rem;
+}
+
+.section-card {
+    padding: 0;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.section-card .card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-card-header);
+}
+
+.section-card .card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* Form Styling */
+.leave-form {
+    padding: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+/* Sidebar Balances */
+.balance-cards {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.balance-mini-card {
+    padding: 1rem;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: var(--bg-card);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.balance-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.balance-details {
+    flex: 1;
+}
+
+.balance-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.balance-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+}
+
+.balance-value .available {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.balance-value .total {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.balance-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(0,0,0,0.05);
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Info Section */
+.info-section {
+    padding: 1.5rem;
+}
+
+.policy-list {
+    margin-top: 1rem;
+    padding-left: 1.25rem;
+    list-style: none;
+}
+
+.policy-list li {
+    position: relative;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.policy-list li::before {
+    content: "";
+    position: absolute;
+    left: -1.25rem;
+    top: 0.6rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+}
+
+.alert-card {
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .apply-leave-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .apply-leave-sidebar {
+        order: -1;
+    }
+}

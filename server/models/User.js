@@ -82,7 +82,62 @@ const userSchema = new mongoose.Schema({
     },
     resignationReason: {
         type: String,
-    }
+    },
+    onboardingStatus: {
+        type: String,
+        enum: ['NOT_JOINED', 'JOINED', 'DOCUMENTS_PENDING', 'DOCUMENTS_SUBMITTED', 'DOCUMENTS_VERIFIED', 'FORM_PENDING', 'FORM_SUBMITTED', 'COMPLETED'],
+        default: 'NOT_JOINED',
+    },
+    bankDetails: {
+        accountHolderName: String,
+        accountNumber: String,
+        bankName: String,
+        ifscCode: String,
+    },
+    emergencyContact: {
+        name: String,
+        relationship: String,
+        phone: String,
+    },
+    fathersName: String,
+    bloodGroup: String,
+    aadharNumber: String,
+    panNumber: String,
+    pfNumber: String,
+    uanNumber: String,
+    esiNumber: String,
+    unitName: String,
+    qualification: String,
+    ctc: String,
+    experienceYears: String,
+    insuranceDetails: {
+        policyType: String,
+        policyNumber: String
+    },
+    // Payroll & Performance Settings
+    workMode: {
+        type: String,
+        enum: ['WFO', 'WFH'],
+        default: 'WFO'
+    },
+    performanceFactor: {
+        type: Number,
+        default: 100, // Percentage (0-100)
+    },
+    isPFApplicable: {
+        type: Boolean,
+        default: true
+    },
+    isBonusApplicable: {
+        type: Boolean,
+        default: true
+    },
+    taxPercent: {
+        type: Number,
+        default: 0
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date
 }, {
     timestamps: true,
 });
@@ -99,6 +154,23 @@ userSchema.pre('save', async function () {
 // Math user entered password to hashed password in database
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Generate and hash password token
+userSchema.methods.getResetPasswordToken = function () {
+    // Generate token
+    const resetToken = require('crypto').randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken field
+    this.resetPasswordToken = require('crypto')
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+    // Set expire
+    this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    return resetToken;
 };
 
 module.exports = mongoose.model('User', userSchema);

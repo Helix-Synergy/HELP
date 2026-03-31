@@ -299,3 +299,7 @@
         overflow-x: auto;
     }
 }
+
+.cursor-pointer {
+    cursor: pointer;
+}

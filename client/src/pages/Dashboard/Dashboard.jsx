@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Clock, Calendar, CheckCircle, TrendingUp, Anchor, Activity, BarChart2, FileText, Download } from 'lucide-react';
+import { Users, Clock, Calendar, CheckCircle, TrendingUp, Anchor, Activity, BarChart2, FileText, Download, Building, Database } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import './Dashboard.css';
 
@@ -334,45 +334,81 @@ const HRDashboard = () => (
     </motion.div>
 );
 
-const SuperAdminDashboard = () => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="dashboard-content-layer">
-        <div className="page-header">
-            <h1>System & Super Admin Dashboard</h1>
-            <p>Platform health and aggregate reporting.</p>
-        </div>
-        <div className="stats-grid">
-            <StatCard title="Active Tenants/Depts" value="12" icon={<Building size={20} />} trend="2 New" isPositive={true} />
-            <StatCard title="API Traffic" value="842K" icon={<Activity size={20} />} trend="14%" isPositive={true} />
-            <StatCard title="Storage Used" value="428 GB" icon={<Database size={20} />} trend="Warning" isPositive={false} />
-            <StatCard title="System Uptime" value="99.99%" icon={<CheckCircle size={20} />} />
-        </div>
-        <div className="dashboard-row">
-            <div className="card full-height col-span-2">
-                <div className="card-header">
-                    <h3>Server Load & API Traffic</h3>
-                </div>
-                <div className="card-body" style={{ height: '300px' }}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                        <AreaChart data={attendanceData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
-                            <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
-                            <Area type="monotone" dataKey="present" stroke="#F59E0B" fillOpacity={1} fill="url(#colorTraffic)" strokeWidth={3} />
-                        </AreaChart>
-                    </ResponsiveContainer>
+const SuperAdminDashboard = () => {
+    const [stats, setStats] = useState({
+        activeTenants: '0',
+        apiTraffic: '0',
+        storageUsed: '0 GB',
+        uptime: '99.99%',
+        activityData: []
+    });
+    const [loading, setLoading] = useState(true);
+
+    React.useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const { default: api } = await import('../../api/axios');
+                const res = await api.get('/dashboard/system-stats');
+                setStats(res.data.data);
+            } catch (err) {
+                console.error("Error fetching admin stats:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="dashboard-content-layer flex items-center justify-center" style={{ minHeight: '60vh' }}>
+                <div className="text-center">
+                    <Activity className="animate-spin text-accent-primary mb-4 mx-auto" size={40} />
+                    <p className="text-secondary font-medium">Aggregating System Metrics...</p>
                 </div>
             </div>
-        </div>
-    </motion.div>
-);
+        );
+    }
 
-import { Building, Database } from 'lucide-react'; // Late import for Super Admin
+    return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="dashboard-content-layer">
+            <div className="page-header">
+                <h1>System & Super Admin Dashboard</h1>
+                <p>Platform health and aggregate reporting.</p>
+            </div>
+            <div className="stats-grid">
+                <StatCard title="Active Tenants/Depts" value={stats.activeTenants} icon={<Building size={20} />} trend="New" isPositive={true} />
+                <StatCard title="API Traffic" value={stats.apiTraffic} icon={<Activity size={20} />} trend="Live" isPositive={true} />
+                <StatCard title="Storage Used" value={stats.storageUsed} icon={<Database size={20} />} trend="Active" isPositive={true} />
+                <StatCard title="System Uptime" value={stats.uptime} icon={<CheckCircle size={20} />} />
+            </div>
+            <div className="dashboard-row">
+                <div className="card full-height col-span-2">
+                    <div className="card-header">
+                        <h3>Server Load & API Traffic</h3>
+                    </div>
+                    <div className="card-body" style={{ height: '300px' }}>
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                            <AreaChart data={stats.activityData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
+                                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
+                                <Area type="monotone" dataKey="present" stroke="#F59E0B" fillOpacity={1} fill="url(#colorTraffic)" strokeWidth={3} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
 
 const Dashboard = () => {
     // Get real user role from localStorage

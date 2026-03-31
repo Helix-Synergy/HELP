@@ -7,7 +7,7 @@ const AssetSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: ['LAPTOP', 'MONITOR', 'MOBILE', 'ACCESSORY', 'FURNITURE', 'OTHER'],
+        enum: ['LAPTOP', 'MONITOR', 'MOBILE', 'ACCESSORY', 'FURNITURE', 'OTHER', 'TABLET', 'KEYBOARD', 'MOUSE', 'HEADSET', 'WEBCAM', 'UPS', 'PRINTER', 'SERVER', 'NETWORKING'],
         required: true
     },
     serialNumber: {

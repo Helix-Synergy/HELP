@@ -12,6 +12,13 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
     const user = JSON.parse(userStr);
 
+    // Strict Onboarding Check for Employees
+    if (user.role === 'EMPLOYEE' && user.onboardingStatus !== 'COMPLETED') {
+        if (location.pathname !== '/onboarding') {
+            return <Navigate to="/onboarding" replace />;
+        }
+    }
+
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         // Redirect to dashboard if trying to access unauthorized route
         return <Navigate to="/dashboard" replace />;

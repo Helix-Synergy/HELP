@@ -25,10 +25,18 @@ const errorHandler = (err, req, res, next) => {
         error = new ErrorResponse(message, 400);
     }
 
-    res.status(error.statusCode || 500).json({
-        success: false,
-        error: error.message || 'Server Error'
-    });
+    if (process.env.NODE_ENV === 'production') {
+        res.status(error.statusCode || 500).json({
+            success: false,
+            error: error.message || 'Server Error'
+        });
+    } else {
+        res.status(error.statusCode || 500).json({
+            success: false,
+            error: error.message || 'Server Error',
+            stack: err.stack
+        });
+    }
 };
 
 module.exports = errorHandler;

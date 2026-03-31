@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -16,6 +16,7 @@ const navItems = [
     { title: 'Leaves', icon: <CalendarOff size={20} />, path: '/leaves', roles: ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE'] },
     { title: 'Timesheets', icon: <CheckSquare size={20} />, path: '/timesheets', roles: ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE'] },
     { title: 'Documents', icon: <FileText size={20} />, path: '/documents', roles: ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE'] },
+    { title: 'Payroll', icon: <Receipt size={20} />, path: '/payroll', roles: ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE', 'FINANCE'] },
     { title: 'Onboarding', icon: <CheckSquare size={20} />, path: '/onboarding', roles: ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE'] },
     { title: 'Performance', icon: <Target size={20} />, path: '/performance', roles: ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE'] },
     { title: 'Helpdesk', icon: <HeadphonesIcon size={20} />, path: '/helpdesk', roles: ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER', 'EMPLOYEE'] },
@@ -27,13 +28,34 @@ const navItems = [
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
-
-    // Get user from local storage
-    const userStr = localStorage.getItem('hems_user');
-    const user = userStr ? JSON.parse(userStr) : null;
+    const [user, setUser] = useState(() => {
+        const userStr = localStorage.getItem('hems_user');
+        return userStr ? JSON.parse(userStr) : null;
+    });
+ 
+    useEffect(() => {
+        const handleStorageChange = () => {
+            const userStr = localStorage.getItem('hems_user');
+            if (userStr) setUser(JSON.parse(userStr));
+        };
+ 
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('userChange', handleStorageChange); // Custom event for same-tab updates
+ 
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('userChange', handleStorageChange);
+        };
+    }, []);
+ 
     const userRole = user?.role || 'EMPLOYEE';
 
-    const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+    let filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+
+    // Strict Onboarding Filter
+    if (userRole === 'EMPLOYEE' && user?.onboardingStatus !== 'COMPLETED') {
+        filteredNavItems = filteredNavItems.filter(item => item.path === '/onboarding');
+    }
 
     return (
         <motion.aside

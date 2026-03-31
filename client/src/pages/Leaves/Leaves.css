@@ -230,3 +230,91 @@
     width: 100%;
     justify-content: center;
 }
+
+/* Admin Balances Layout */
+.admin-balances-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.emp-balance-card {
+    padding: 20px !important;
+    cursor: default;
+    transition: all 0.2s ease;
+}
+
+.emp-balance-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.emp-balance-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+}
+
+.emp-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.emp-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-light) 0%, var(--bg-tertiary) 100%);
+    color: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.emp-info h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.emp-info span {
+    font-size: 12px;
+}
+
+.emp-balance-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.mini-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: var(--bg-primary);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    flex: 1;
+}
+
+.mini-stat .stat-lbl {
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+}
+
+.mini-stat .stat-val {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.mini-stat .stat-val strong {
+    font-size: 18px;
+    color: var(--text-primary);
+}

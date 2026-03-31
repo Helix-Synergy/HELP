@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Smartphone, Briefcase, Plus, CheckCircle, Clock, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { 
+    Monitor, Smartphone, Briefcase, Plus, CheckCircle, Clock, X,
+    Keyboard, Mouse, Headphones, Camera, Zap, Printer, Server, Network, Tablet
+} from 'lucide-react';
 import api from '../../api/axios';
 import './Assets.css';
 
 const Assets = () => {
+    const navigate = useNavigate();
     const [myAssets, setMyAssets] = useState([]);
     const [allAssets, setAllAssets] = useState([]);
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [isAdmin, setIsAdmin] = useState(false);
-
-    // Modal states
-    const [showNewAssetModal, setShowNewAssetModal] = useState(false);
-
-    // Form state
-    const [newAsset, setNewAsset] = useState({ name: '', category: 'LAPTOP', serialNumber: '', condition: 'NEW' });
 
     useEffect(() => {
         const userStr = localStorage.getItem('hems_user');
@@ -56,23 +55,21 @@ const Assets = () => {
         }
     }
 
-    const handleCreateAsset = async (e) => {
-        e.preventDefault();
-        try {
-            await api.post('/assets', newAsset);
-            setShowNewAssetModal(false);
-            setNewAsset({ name: '', category: 'LAPTOP', serialNumber: '', condition: 'NEW' });
-            fetchData();
-        } catch (error) {
-            alert('Error creating asset. Serial number might be duplicate.');
-        }
-    };
 
     const getIcon = (cat) => {
         switch (cat) {
             case 'LAPTOP': return <Monitor size={20} className="text-blue-500" />;
             case 'MOBILE': return <Smartphone size={20} className="text-green-500" />;
             case 'MONITOR': return <Monitor size={20} className="text-purple-500" />;
+            case 'KEYBOARD': return <Keyboard size={20} className="text-orange-500" />;
+            case 'MOUSE': return <Mouse size={20} className="text-pink-500" />;
+            case 'HEADSET': return <Headphones size={20} className="text-blue-400" />;
+            case 'WEBCAM': return <Camera size={20} className="text-red-400" />;
+            case 'UPS': return <Zap size={20} className="text-yellow-500" />;
+            case 'PRINTER': return <Printer size={20} className="text-slate-500" />;
+            case 'SERVER': return <Server size={20} className="text-indigo-600" />;
+            case 'NETWORKING': return <Network size={20} className="text-teal-500" />;
+            case 'TABLET': return <Tablet size={20} className="text-cyan-500" />;
             default: return <Briefcase size={20} className="text-gray-500" />;
         }
     };
@@ -85,7 +82,7 @@ const Assets = () => {
                     <p className="text-gray-500 font-medium tracking-wide">View your assigned corporate hardware and inventory.</p>
                 </div>
                 {isAdmin && (
-                    <button onClick={() => setShowNewAssetModal(true)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-blue-500/30 flex items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0">
+                    <button onClick={() => navigate('/assets/new')} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-blue-500/30 flex items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0">
                         <Plus size={20} /> <span className="tracking-wide">New Asset</span>
                     </button>
                 )}
@@ -186,66 +183,6 @@ const Assets = () => {
                 )}
             </div>
 
-            {/* Modal */}
-            <AnimatePresence>
-                {showNewAssetModal && (
-                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                            transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-                            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-white/20 ring-1 ring-black/5"
-                        >
-                            <div className="flex justify-between items-center p-6 bg-gray-50/50 border-b border-gray-100">
-                                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Plus className="text-blue-500" /> Add Inventory Item</h2>
-                                <button className="text-gray-400 hover:text-gray-700 bg-white hover:bg-gray-100 rounded-full p-1 transition-colors" onClick={() => setShowNewAssetModal(false)}><X size={20} /></button>
-                            </div>
-                            <form onSubmit={handleCreateAsset} className="p-6">
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Device Name</label>
-                                    <input
-                                        type="text" required className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                        value={newAsset.name} onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                                        placeholder="e.g. MacBook Air M2"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                        <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={newAsset.category} onChange={(e) => setNewAsset({ ...newAsset, category: e.target.value })}>
-                                            <option value="LAPTOP">Laptop</option>
-                                            <option value="MONITOR">Monitor</option>
-                                            <option value="MOBILE">Mobile Device</option>
-                                            <option value="ACCESSORY">Accessory</option>
-                                            <option value="FURNITURE">Furniture</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
-                                        <select className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={newAsset.condition} onChange={(e) => setNewAsset({ ...newAsset, condition: e.target.value })}>
-                                            <option value="NEW">New</option>
-                                            <option value="GOOD">Good</option>
-                                            <option value="FAIR">Fair</option>
-                                            <option value="POOR">Poor</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Serial Number</label>
-                                    <input
-                                        type="text" required className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono"
-                                        value={newAsset.serialNumber} onChange={(e) => setNewAsset({ ...newAsset, serialNumber: e.target.value })}
-                                        placeholder="Enter unique S/N"
-                                    />
-                                </div>
-                                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-8 bg-gray-50 -mx-6 -mb-6 p-6">
-                                    <button type="button" onClick={() => setShowNewAssetModal(false)} className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-xl transition-colors">Cancel</button>
-                                    <button type="submit" className="px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 transition-all">Save Portfolio</button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
         </motion.div>
     );
 };

@@ -6,9 +6,14 @@ const Ticket = require('../models/Ticket');
 // @route   GET /api/v1/helpdesk/me
 // @access  Private
 exports.getMyTickets = asyncHandler(async (req, res, next) => {
-    const tickets = await Ticket.find({ requesterId: req.user.id })
-        .populate('requesterId', 'firstName lastName')
-        .populate('assignedTo', 'firstName lastName')
+    const tickets = await Ticket.find({ 
+        $or: [
+            { requesterId: req.user.id },
+            { assignedTo: req.user.id }
+        ]
+    })
+        .populate('requesterId', 'firstName lastName email')
+        .populate('assignedTo', 'firstName lastName email')
         .populate('comments.userId', 'firstName lastName')
         .sort('-createdAt');
 
@@ -41,7 +46,7 @@ exports.createTicket = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/v1/helpdesk/:id
 // @access  Private
 exports.updateTicket = asyncHandler(async (req, res, next) => {
-    const { status, text } = req.body;
+    const { status, text, assignedTo } = req.body;
 
     let ticket = await Ticket.findById(req.params.id);
     if (!ticket) return next(new ErrorResponse('Ticket not found', 404));
@@ -55,18 +60,21 @@ exports.updateTicket = asyncHandler(async (req, res, next) => {
         });
     }
 
-    // Update status if provided (and user has right privileges)
+    // Update status if provided
     if (status) {
-        // Only HR/Admins or the assigned IT user can change status usually, 
-        // but adding simple check here to allow requester to close it.
         ticket.status = status;
+    }
+
+    // Update assignment if provided (Admin/HR only usually, but controller allows it)
+    if (assignedTo !== undefined) {
+        ticket.assignedTo = assignedTo || null;
     }
 
     await ticket.save();
 
     ticket = await Ticket.findById(req.params.id)
-        .populate('requesterId', 'firstName lastName')
-        .populate('assignedTo', 'firstName lastName')
+        .populate('requesterId', 'firstName lastName email')
+        .populate('assignedTo', 'firstName lastName email')
         .populate('comments.userId', 'firstName lastName');
 
     res.status(200).json({ success: true, data: ticket });
