@@ -10,7 +10,8 @@ const {
     getUserTasks,
     getMyAssignedTasks,
     createTask,
-    completeTask
+    completeTask,
+    submitDocuments
 } = require('../controllers/onboarding');
 const { protect, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -24,6 +25,7 @@ router.post('/trigger/:userId', authorize('SUPER_ADMIN', 'HR_ADMIN'), triggerOnb
 router.post('/upload/:docId', upload.single('file'), uploadDocument);
 router.put('/verify-docs/:userId', authorize('SUPER_ADMIN', 'HR_ADMIN'), verifyDocuments);
 router.post('/submit-form', submitForm);
+router.post('/submit-docs', submitDocuments);
 router.put('/verify-form/:userId', authorize('SUPER_ADMIN', 'HR_ADMIN'), verifyForm);
 router.get('/user/:userId', authorize('SUPER_ADMIN', 'HR_ADMIN'), getOnboardingByUser);
 

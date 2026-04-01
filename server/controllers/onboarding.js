@@ -24,10 +24,10 @@ exports.triggerOnboarding = asyncHandler(async (req, res, next) => {
         detail = await OnboardingDetail.create({
             user: user._id,
             documents: [
-                { name: 'Aadhar Card' },
-                { name: 'PAN Card' },
-                { name: 'Education Certificates' },
-                { name: 'Previous Experience Letter' }
+                { name: 'Aadhar Card', required: true },
+                { name: 'PAN Card', required: true },
+                { name: 'Education Certificates', required: true },
+                { name: 'Previous Experience Letter', required: false }
             ]
         });
     }
@@ -76,11 +76,6 @@ exports.uploadDocument = asyncHandler(async (req, res, next) => {
 
     await detail.save();
 
-    // Check if all docs are submitted
-    const allSubmitted = detail.documents.every(d => d.status === 'SUBMITTED' || d.status === 'APPROVED');
-    if (allSubmitted) {
-        await User.findByIdAndUpdate(req.user.id, { onboardingStatus: 'DOCUMENTS_SUBMITTED' });
-    }
 
     res.status(200).json({ success: true, data: detail });
 });
@@ -247,4 +242,23 @@ exports.completeTask = asyncHandler(async (req, res, next) => {
     task.completedBy = req.user.id;
     await task.save();
     res.status(200).json({ success: true, data: task });
+});
+
+// @desc    Submit documents for verification
+// @route   POST /api/v1/onboarding/submit-docs
+// @access  Private
+exports.submitDocuments = asyncHandler(async (req, res, next) => {
+    const detail = await OnboardingDetail.findOne({ user: req.user.id });
+    if (!detail) return next(new ErrorResponse('Onboarding details not found', 404));
+
+    // Check if ALL REQUIRED docs are submitted or approved
+    const missingRequired = detail.documents.filter(d => d.required && (d.status === 'PENDING' || d.status === 'REJECTED'));
+    
+    if (missingRequired.length > 0) {
+        return next(new ErrorResponse(`Please upload all mandatory documents: ${missingRequired.map(d => d.name).join(', ')}`, 400));
+    }
+
+    await User.findByIdAndUpdate(req.user.id, { onboardingStatus: 'DOCUMENTS_SUBMITTED' });
+    
+    res.status(200).json({ success: true, message: 'Documents submitted for verification' });
 });

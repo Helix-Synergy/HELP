@@ -105,6 +105,16 @@ const Onboarding = () => {
         }
     };
 
+    const handleSubmitDocs = async () => {
+        try {
+            await api.post('/onboarding/submit-docs');
+            alert('Documents submitted for verification');
+            fetchEmployeeData();
+        } catch (error) {
+            alert('Submission failed: ' + (error.response?.data?.error || error.message));
+        }
+    };
+
     const handleActionClick = (userId) => {
         navigate(`/onboarding/details/${userId}`);
     };
@@ -319,18 +329,26 @@ const Onboarding = () => {
                         <div className="bg-blue-50 w-20 h-20 rounded-full flex-center mx-auto mb-6">
                             <FileText size={40} className="text-accent" />
                         </div>
-                        <h2 className="mb-2">Phase 1: Mandatory Documents</h2>
-                        <p className="text-secondary mb-8">Please upload the Following documents for HR verification.</p>
+                        <h2 className="mb-2">Phase 1: Documents</h2>
+                        <p className="text-secondary mb-8">Please upload all mandatory documents to proceed.</p>
                         
                         <div className="space-y-4 text-left">
                             {myOnboarding?.documents.map(doc => (
                                 <div key={doc._id} className="document-upload-row p-4 border rounded-xl flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="p-2 bg-gray-50 rounded-lg">
+                                        <div className="p-2 bg-gray-50 rounded-lg relative">
                                             {doc.status === 'APPROVED' ? <CheckCircle className="text-success" /> : <FileText className="text-secondary" />}
+                                            {doc.required && doc.status === 'PENDING' && (
+                                                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-danger rounded-full border-2 border-white"></div>
+                                            )}
                                         </div>
                                         <div>
-                                            <div className="font-medium">{doc.name}</div>
+                                            <div className="font-medium flex items-center gap-2">
+                                                {doc.name}
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${doc.required ? 'bg-danger/10 text-danger' : 'bg-gray-100 text-secondary'}`}>
+                                                    {doc.required ? 'Required' : 'Optional'}
+                                                </span>
+                                            </div>
                                             <div className="text-xs text-secondary">Status: <strong className={doc.status === 'APPROVED' ? 'text-success' : 'text-accent'}>{doc.status}</strong></div>
                                         </div>
                                     </div>
@@ -347,6 +365,19 @@ const Onboarding = () => {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="mt-10 pt-6 border-t flex flex-col items-center">
+                            <button 
+                                className="btn-primary px-12 py-3 shadow-lg shadow-accent/20 flex items-center gap-2"
+                                onClick={handleSubmitDocs}
+                                disabled={myOnboarding?.documents.some(d => d.required && d.status === 'PENDING')}
+                            >
+                                Submit for Verification <ArrowRight size={18} />
+                            </button>
+                            {myOnboarding?.documents.some(d => d.required && d.status === 'PENDING') && (
+                                <p className="text-xs text-danger mt-3 font-medium">Please upload all required documents to enable submission.</p>
+                            )}
                         </div>
                     </div>
                 )}

@@ -13,6 +13,10 @@ const OnboardingDetailSchema = new mongoose.Schema({
                 type: String,
                 required: true
             },
+            required: {
+                type: Boolean,
+                default: true
+            },
             fileUrl: {
                 type: String
             },
