@@ -7,26 +7,33 @@ const Attendance = require('../models/Attendance');
 // @access  Private (Employee)
 exports.punch = asyncHandler(async (req, res, next) => {
     const { location, ipAddress } = req.body;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    
+    // Get current time in IST (UTC + 5:30)
+    const nowUTC = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const nowIST = new Date(nowUTC.getTime() + istOffset);
+    
+    // Calculate IST Today Start (00:00) in UTC for database consistency
+    const istTodayStart = new Date(nowIST);
+    istTodayStart.setUTCHours(0, 0, 0, 0);
+    const todayStartUTC = new Date(istTodayStart.getTime() - istOffset);
+    const todayEndUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
 
     let attendance = await Attendance.findOne({
         user: req.user.id,
         date: {
-            $gte: today,
-            $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+            $gte: todayStartUTC,
+            $lt: todayEndUTC
         }
     });
 
-    const now = new Date();
-
     if (!attendance) {
-        // Enforce 10:05 AM Deadline (except for Super Admin)
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
+        // Enforce 10:05 AM IST Deadline (except for Super Admin)
+        const istHour = nowIST.getUTCHours();
+        const istMinute = nowIST.getUTCMinutes();
         
         if (req.user.role !== 'SUPER_ADMIN') {
-            if (currentHour > 10 || (currentHour === 10 && currentMinute > 5)) {
+            if (istHour > 10 || (istHour === 10 && istMinute > 5)) {
                 return next(new ErrorResponse('out of time', 400));
             }
         }
@@ -34,8 +41,8 @@ exports.punch = asyncHandler(async (req, res, next) => {
         // Punch In
         attendance = await Attendance.create({
             user: req.user.id,
-            date: today,
-            punches: [{ punchIn: now, location, ipAddress }],
+            date: todayStartUTC,
+            punches: [{ punchIn: nowUTC, location, ipAddress }],
             status: 'PRESENT'
         });
         return res.status(200).json({ success: true, data: attendance, message: 'Punched In' });
@@ -46,7 +53,7 @@ exports.punch = asyncHandler(async (req, res, next) => {
 
     if (!lastPunch.punchOut) {
         // Punch Out
-        lastPunch.punchOut = now;
+        lastPunch.punchOut = nowUTC;
 
         // Calculate total hours
         let ms = 0;
@@ -62,7 +69,7 @@ exports.punch = asyncHandler(async (req, res, next) => {
         return res.status(200).json({ success: true, data: attendance, message: 'Punched Out' });
     } else {
         // New Punch In
-        attendance.punches.push({ punchIn: now, location, ipAddress });
+        attendance.punches.push({ punchIn: nowUTC, location, ipAddress });
         await attendance.save();
         return res.status(200).json({ success: true, data: attendance, message: 'Punched In Again' });
     }
@@ -86,15 +93,19 @@ exports.getAllAttendance = asyncHandler(async (req, res, next) => {
     
     // If a specific date is provided, use it
     if (req.query.date) {
-        filterDate = new Date(req.query.date);
-        filterDate.setHours(0, 0, 0, 0);
-        const nextDay = new Date(filterDate);
-        nextDay.setDate(nextDay.getDate() + 1);
+        // Normalize input string to IST Midnight represented in UTC
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const inputDate = new Date(req.query.date);
+        inputDate.setUTCHours(0, 0, 0, 0); 
+        
+        const queryStartUTC = new Date(inputDate.getTime() - istOffset);
+        const queryEndUTC = new Date(queryStartUTC.getTime() + 24 * 60 * 60 * 1000);
         
         query.date = {
-            $gte: filterDate,
-            $lt: nextDay
+            $gte: queryStartUTC,
+            $lt: queryEndUTC
         };
+        filterDate = queryStartUTC;
     } else if (req.query.year && req.query.month) {
         const year = parseInt(req.query.year);
         const month = parseInt(req.query.month) - 1;
