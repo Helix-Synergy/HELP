@@ -32,22 +32,22 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         const userStr = localStorage.getItem('hems_user');
         return userStr ? JSON.parse(userStr) : null;
     });
- 
+
     useEffect(() => {
         const handleStorageChange = () => {
             const userStr = localStorage.getItem('hems_user');
             if (userStr) setUser(JSON.parse(userStr));
         };
- 
+
         window.addEventListener('storage', handleStorageChange);
         window.addEventListener('userChange', handleStorageChange); // Custom event for same-tab updates
- 
+
         return () => {
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('userChange', handleStorageChange);
         };
     }, []);
- 
+
     const userRole = user?.role || 'EMPLOYEE';
 
     let filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
@@ -60,7 +60,7 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     return (
         <motion.aside
             className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
-            animate={{ 
+            animate={{
                 width: isCollapsed ? 80 : 260,
                 x: typeof window !== 'undefined' && window.innerWidth <= 768 ? (isMobileOpen ? 0 : -280) : 0
             }}
