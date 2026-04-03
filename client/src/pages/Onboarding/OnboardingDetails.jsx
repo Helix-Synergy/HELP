@@ -17,10 +17,50 @@ const OnboardingDetails = () => {
     const [onboarding, setOnboarding] = useState(null);
     const [verifyRemarks, setVerifyRemarks] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAvatarUploading, setIsAvatarUploading] = useState(false);
 
     useEffect(() => {
         fetchDetails();
     }, [userId]);
+
+    const handleAvatarUpload = async (file) => {
+        if (!file) return;
+        setIsAvatarUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await api.post(`/users/${userId}/avatar`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setOnboarding(prev => ({
+                ...prev,
+                user: { ...prev.user, profilePicture: res.data.data.profilePicture }
+            }));
+            // alert('Profile picture updated successfully');
+        } catch (error) {
+            alert('Upload failed: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsAvatarUploading(false);
+        }
+    };
+
+    const handleRemoveAvatar = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!window.confirm('Are you sure you want to remove this profile picture?')) return;
+        setIsAvatarUploading(true);
+        try {
+            await api.delete(`/users/${userId}/avatar`);
+            setOnboarding(prev => ({
+                ...prev,
+                user: { ...prev.user, profilePicture: null }
+            }));
+        } catch (error) {
+            alert('Removal failed: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsAvatarUploading(false);
+        }
+    };
 
     const fetchDetails = async () => {
         setIsLoading(true);
@@ -104,8 +144,39 @@ const OnboardingDetails = () => {
 
             <header className="mb-10">
                 <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
-                        <User size={40} />
+                    <div className="w-20 h-20 rounded-2xl bg-accent/10 flex items-center justify-center text-accent relative group overflow-hidden border-2 border-transparent hover:border-accent/30 transition-all">
+                        {user?.profilePicture ? (
+                            <img src={user.profilePicture} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="text-3xl font-bold">{user?.firstName?.[0]}{user?.lastName?.[0]}</div>
+                        )}
+                        <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                            {isAvatarUploading ? (
+                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-1 text-white">
+                                    <Upload size={20} />
+                                    <span className="text-[10px] font-bold uppercase">Change</span>
+                                </div>
+                            )}
+                            <input 
+                                type="file" 
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={(e) => handleAvatarUpload(e.target.files[0])} 
+                                disabled={isAvatarUploading} 
+                            />
+                            {user?.profilePicture && !isAvatarUploading && (
+                                <button 
+                                    type="button"
+                                    className="absolute -top-1 -right-1 p-2 bg-danger text-white rounded-full hover:bg-danger/80 transition-colors shadow-lg"
+                                    onClick={handleRemoveAvatar}
+                                    title="Remove Photo"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </label>
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold text-primary mb-1">{user?.firstName} {user?.lastName}</h1>
@@ -270,6 +341,44 @@ const OnboardingDetails = () => {
                                         <div className="flex gap-3">
                                             <div className="text-accent mt-0.5"><ShieldCheck size={18}/></div>
                                             <div><div className="text-[10px] uppercase text-secondary font-bold mb-1">IFSC Code</div><div className="font-semibold font-mono">{personalForm.bankDetails?.ifscCode}</div></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Emergency Contact */}
+                                <div className="space-y-4">
+                                    <h4 className="text-xs uppercase tracking-widest text-secondary font-bold flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-accent"></div> Emergency Contact
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-2xl border border-gray-50">
+                                        <div className="flex gap-3">
+                                            <div className="text-accent mt-0.5"><User size={18}/></div>
+                                            <div><div className="text-[10px] uppercase text-secondary font-bold mb-1">Contact Name</div><div className="font-semibold">{personalForm.emergencyContact?.name}</div></div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <div className="text-accent mt-0.5"><HeartPulse size={18}/></div>
+                                            <div><div className="text-[10px] uppercase text-secondary font-bold mb-1">Relationship</div><div className="font-semibold">{personalForm.emergencyContact?.relationship}</div></div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <div className="text-accent mt-0.5"><Phone size={18}/></div>
+                                            <div><div className="text-[10px] uppercase text-secondary font-bold mb-1">Phone Number</div><div className="font-semibold">{personalForm.emergencyContact?.phone}</div></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Insurance */}
+                                <div className="space-y-4">
+                                    <h4 className="text-xs uppercase tracking-widest text-secondary font-bold flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-accent"></div> Insurance Details
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-2xl border border-gray-50">
+                                        <div className="flex gap-3">
+                                            <div className="text-accent mt-0.5"><ShieldCheck size={18}/></div>
+                                            <div><div className="text-[10px] uppercase text-secondary font-bold mb-1">Policy Type</div><div className="font-semibold">{personalForm.insuranceDetails?.policyType || 'N/A'}</div></div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <div className="text-accent mt-0.5"><CreditCard size={18}/></div>
+                                            <div><div className="text-[10px] uppercase text-secondary font-bold mb-1">Policy Number</div><div className="font-semibold">{personalForm.insuranceDetails?.policyNumber || 'N/A'}</div></div>
                                         </div>
                                     </div>
                                 </div>

@@ -26,6 +26,7 @@ const Onboarding = () => {
     
     // Modals
     const [showTriggerModal, setShowTriggerModal] = useState(false);
+    const [isUploading, setIsUploading] = useState(null);
 
     useEffect(() => {
         const userStr = localStorage.getItem('hems_user');
@@ -42,8 +43,8 @@ const Onboarding = () => {
         }
     }, []);
 
-    const fetchEmployeeData = async () => {
-        setIsLoading(true);
+    const fetchEmployeeData = async (silent = false) => {
+        if (!silent) setIsLoading(true);
         try {
             const res = await api.get('/onboarding/me');
             setMyOnboarding(res.data.data);
@@ -82,15 +83,17 @@ const Onboarding = () => {
 
     const handleFileUpload = async (docId, file) => {
         if (!file) return;
+        setIsUploading(docId); // Instant feedback
         const formData = new FormData();
         formData.append('file', file);
         try {
             await api.post(`/onboarding/upload/${docId}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('File uploaded successfully');
-            fetchEmployeeData();
+            await fetchEmployeeData(true); // Silent re-fetch
+            setIsUploading(null);
         } catch (error) {
+            setIsUploading(null);
             alert('Upload failed: ' + (error.response?.data?.error || error.message));
         }
     };
@@ -353,13 +356,18 @@ const Onboarding = () => {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {doc.status !== 'APPROVED' && (
+                                        {isUploading === doc._id ? (
+                                            <div className="flex items-center gap-2 text-accent font-bold animate-pulse">
+                                                <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                                                Uploading...
+                                            </div>
+                                        ) : doc.status !== 'APPROVED' && (
                                             <label className="btn-secondary py-1 px-4 text-sm cursor-pointer hover:bg-gray-100">
                                                 <Upload size={14} className="mr-2 inline" /> {doc.fileUrl ? 'Change' : 'Upload'}
                                                 <input type="file" className="hidden" onChange={(e) => handleFileUpload(doc._id, e.target.files[0])} />
                                             </label>
                                         )}
-                                        {doc.fileUrl && (
+                                        {doc.fileUrl && !isUploading && (
                                             <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-2 hover:bg-gray-50 rounded-lg"><Eye size={18} /></a>
                                         )}
                                     </div>

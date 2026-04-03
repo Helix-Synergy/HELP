@@ -89,6 +89,29 @@
     gap: 1.5rem;
 }
 
+.duration-preview-alert {
+    background: var(--accent-light);
+    color: var(--accent-primary);
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    border: 1px solid var(--accent-primary-transparent);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.duration-preview-alert strong {
+    font-size: 1.05rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Sidebar Balances */
 .balance-cards {
     padding: 1.25rem;

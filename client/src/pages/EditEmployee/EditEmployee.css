@@ -121,3 +121,71 @@
 .btn-primary:active, .btn-secondary:active {
     transform: scale(0.98);
 }
+
+/* Avatar Upload Section */
+.avatar-upload-section {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 1rem;
+    border: 1px dashed #e2e8f0;
+    margin-bottom: 2.5rem;
+}
+
+.avatar-upload-section .relative {
+    position: relative;
+}
+
+.avatar-upload-section .w-24 {
+    width: 6rem;
+}
+
+.avatar-upload-section .h-24 {
+    height: 6rem;
+}
+
+.avatar-upload-section .rounded-2xl {
+    border-radius: 1rem;
+}
+
+.avatar-upload-section .bg-white {
+    background: white;
+}
+
+.avatar-upload-section .shadow-sm {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.avatar-upload-section .overflow-hidden {
+    overflow: hidden;
+}
+
+.avatar-upload-section .object-cover {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+
+.avatar-upload-section .bg-black\/40 {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.avatar-upload-section .animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.avatar-upload-section .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+}

@@ -2,11 +2,67 @@ const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const LeaveRequest = require('../models/LeaveRequest');
 const LeaveBalance = require('../models/LeaveBalance');
+const Holiday = require('../models/Holiday');
+
+// Helper to calculate working days (excluding weekends and holidays)
+const calculateWorkingDays = async (startDate, endDate) => {
+    const holidays = await Holiday.find({
+        date: { $gte: new Date(startDate), $lte: new Date(endDate) }
+    });
+    const holidayDates = holidays.map(h => h.date.toISOString().split('T')[0]);
+
+    let count = 0;
+    const curDate = new Date(startDate);
+    const lastDate = new Date(endDate);
+
+    while (curDate <= lastDate) {
+        const dayOfWeek = curDate.getDay();
+        const dateStr = curDate.toISOString().split('T')[0];
+
+        // 0 = Sunday, 6 = Saturday
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const isHoliday = holidayDates.includes(dateStr);
+
+        if (!isWeekend && !isHoliday) {
+            count++;
+        }
+        curDate.setDate(curDate.getDate() + 1);
+    }
+    return count;
+};
 
 // @desc    Apply for leave
 // @route   POST /api/v1/leaves/apply
 // @access  Private
 exports.applyLeave = asyncHandler(async (req, res, next) => {
+    const { startDate, endDate, leaveType } = req.body;
+    
+    // 1. Check if backdated
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(startDate) < today) {
+        return next(new ErrorResponse('Leaves cannot be applied for past dates', 400));
+    }
+    if (new Date(endDate) < new Date(startDate)) {
+        return next(new ErrorResponse('End date cannot be before start date', 400));
+    }
+
+    // 2. Check for overlapping leaves
+    const existingLeave = await LeaveRequest.findOne({
+        user: req.user.id,
+        status: { $in: ['PENDING', 'APPROVED'] },
+        $or: [
+            {
+                startDate: { $lte: new Date(endDate) },
+                endDate: { $gte: new Date(startDate) }
+            }
+        ]
+    });
+
+    if (existingLeave) {
+        return next(new ErrorResponse('You already have a leave request for these dates (Pending or Approved)', 400));
+    }
+
     req.body.user = req.user.id;
     const leave = await LeaveRequest.create(req.body);
     res.status(201).json({ success: true, data: leave });
@@ -50,6 +106,14 @@ exports.getLeaveBalance = asyncHandler(async (req, res, next) => {
     res.status(200).json({ success: true, data: balance });
 });
 
+// @desc    Get all company holidays
+// @route   GET /api/v1/leaves/holidays
+// @access  Private
+exports.getHolidays = asyncHandler(async (req, res, next) => {
+    const holidays = await Holiday.find().sort('date');
+    res.status(200).json({ success: true, count: holidays.length, data: holidays });
+});
+
 // @desc    Update leave status
 // @route   PUT /api/v1/leaves/:id/status
 // @access  Private (Manager/Admin)
@@ -66,8 +130,7 @@ exports.updateLeaveStatus = asyncHandler(async (req, res, next) => {
 
     // If approved, reduce balance
     if (newStatus === 'APPROVED' && oldStatus !== 'APPROVED') {
-        const diff = new Date(leave.endDate) - new Date(leave.startDate);
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+        const days = await calculateWorkingDays(leave.startDate, leave.endDate);
 
         const balance = await LeaveBalance.findOne({ user: leave.user, year: new Date(leave.startDate).getFullYear() });
         if (balance) {

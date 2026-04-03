@@ -18,6 +18,7 @@ const ApplyLeave = () => {
         endDate: '',
         reason: ''
     });
+    const [holidays, setHolidays] = useState([]);
 
     useEffect(() => {
         fetchBalances();
@@ -25,6 +26,9 @@ const ApplyLeave = () => {
 
     const fetchBalances = async () => {
         try {
+            const holRes = await api.get('/leaves/holidays');
+            setHolidays(holRes.data.data.map(h => new Date(h.date).toISOString().split('T')[0]));
+            
             const res = await api.get('/leaves/balance');
             const rawBalances = res.data.data.balances;
             
@@ -43,6 +47,28 @@ const ApplyLeave = () => {
         } catch (err) {
             console.error('Failed to fetch balances:', err);
         }
+    };
+
+    const calcWorkingDays = (start, end) => {
+        if (!start || !end) return 0;
+        let count = 0;
+        const curDate = new Date(start);
+        const lastDate = new Date(end);
+
+        while (curDate <= lastDate) {
+            const dayOfWeek = curDate.getDay();
+            const dateStr = curDate.toISOString().split('T')[0];
+
+            // 0 = Sunday, 6 = Saturday
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const isHoliday = holidays.includes(dateStr);
+
+            if (!isWeekend && !isHoliday) {
+                count++;
+            }
+            curDate.setDate(curDate.getDate() + 1);
+        }
+        return count;
     };
 
     const handleSubmit = async (e) => {
@@ -131,6 +157,16 @@ const ApplyLeave = () => {
                                     />
                                 </div>
                             </div>
+
+                            {formData.startDate && formData.endDate && (
+                                <div className="duration-preview-alert">
+                                    <Clock size={16} />
+                                    <span>
+                                        Deduction: <strong>{calcWorkingDays(formData.startDate, formData.endDate)} Working Days</strong> 
+                                        <small className="ml-2">(Excludes weekends & holidays)</small>
+                                    </span>
+                                </div>
+                            )}
 
                             <div className="form-group">
                                 <label>Reason for Leave</label>

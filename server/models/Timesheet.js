@@ -6,36 +6,18 @@ const TimesheetSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    weekStartDate: {
+    date: {
         type: Date,
         required: true
     },
-    weekEndDate: {
-        type: Date,
-        required: true
-    },
-    entries: [{
-        project: {
-            type: mongoose.Schema.ObjectId,
-            ref: 'Project',
-            required: true
-        },
-        taskDescription: {
+    tasks: [{
+        description: {
             type: String,
             required: true
         },
-        isBillable: {
-            type: Boolean,
-            default: true
-        },
         hours: {
-            monday: { type: Number, default: 0 },
-            tuesday: { type: Number, default: 0 },
-            wednesday: { type: Number, default: 0 },
-            thursday: { type: Number, default: 0 },
-            friday: { type: Number, default: 0 },
-            saturday: { type: Number, default: 0 },
-            sunday: { type: Number, default: 0 }
+            type: Number,
+            required: true
         }
     }],
     totalHours: {
@@ -44,35 +26,28 @@ const TimesheetSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED'],
-        default: 'DRAFT'
+        enum: ['SUBMITTED'],
+        default: 'SUBMITTED'
     },
-    approvedBy: {
-        type: mongoose.Schema.ObjectId,
-        ref: 'User'
-    },
-    managerComments: {
-        type: String
+    submittedAt: {
+        type: Date,
+        default: Date.now
     }
 }, { timestamps: true });
 
-// Pre-save middleware to calculate total weekly hours across all projects
-TimesheetSchema.pre('save', function () {
+// Ensure unique log per user per day
+TimesheetSchema.index({ user: 1, date: 1 }, { unique: true });
+
+// Pre-save middleware to calculate total daily hours
+TimesheetSchema.pre('save', function (next) {
     let total = 0;
-    if (this.entries) {
-        this.entries.forEach(entry => {
-            if (entry.hours) {
-                total += (entry.hours.monday || 0) +
-                        (entry.hours.tuesday || 0) +
-                        (entry.hours.wednesday || 0) +
-                        (entry.hours.thursday || 0) +
-                        (entry.hours.friday || 0) +
-                        (entry.hours.saturday || 0) +
-                        (entry.hours.sunday || 0);
-            }
+    if (this.tasks) {
+        this.tasks.forEach(task => {
+            total += (Number(task.hours) || 0);
         });
     }
     this.totalHours = total;
+    next();
 });
 
 module.exports = mongoose.model('Timesheet', TimesheetSchema);

@@ -14,6 +14,7 @@ const EditEmployee = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAvatarUploading, setIsAvatarUploading] = useState(false);
     const [employee, setEmployee] = useState(null);
     const [formData, setFormData] = useState({
         firstName: '',
@@ -75,6 +76,37 @@ const EditEmployee = () => {
             navigate('/directory');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsAvatarUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await api.post(`/users/${id}/avatar`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setEmployee(prev => ({ ...prev, profilePicture: res.data.data.profilePicture }));
+        } catch (error) {
+            alert('Upload failed: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsAvatarUploading(false);
+        }
+    };
+
+    const handleRemoveAvatar = async () => {
+        if (!window.confirm('Are you sure you want to remove this profile picture?')) return;
+        setIsAvatarUploading(true);
+        try {
+            await api.delete(`/users/${id}/avatar`);
+            setEmployee(prev => ({ ...prev, profilePicture: null }));
+        } catch (error) {
+            alert('Removal failed: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsAvatarUploading(false);
         }
     };
 
@@ -152,6 +184,47 @@ const EditEmployee = () => {
                                 <UserIcon size={20} className="text-blue-500" />
                                 <h2>Account Information</h2>
                             </div>
+                            
+                            <div className="avatar-upload-section mb-10 flex items-center gap-6 p-4 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                                <div className="relative group w-24 h-24">
+                                    <div className="w-24 h-24 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-primary overflow-hidden">
+                                        {employee?.profilePicture ? (
+                                            <img src={employee.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="text-3xl font-bold text-blue-500">
+                                                {formData.firstName?.[0]}{formData.lastName?.[0]}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {isAvatarUploading && (
+                                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl z-10">
+                                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-gray-800 mb-1">Employee Profile Photo</h4>
+                                    <p className="text-xs text-gray-500 mb-3">Upload a professional photo for the directory.</p>
+                                    <div className="flex items-center gap-3">
+                                        <label className="btn-secondary py-1.5 px-4 text-xs cursor-pointer inline-flex items-center gap-2">
+                                            <UserIcon size={14} />
+                                            {employee?.profilePicture ? 'Change Photo' : 'Upload Photo'}
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={isAvatarUploading} />
+                                        </label>
+                                        {employee?.profilePicture && (
+                                            <button 
+                                                type="button"
+                                                className="text-danger text-xs font-bold hover:underline"
+                                                onClick={handleRemoveAvatar}
+                                                disabled={isAvatarUploading}
+                                            >
+                                                Remove Photo
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="form-group">
                                     <label>First Name</label>

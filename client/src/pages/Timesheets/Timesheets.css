@@ -1,222 +1,149 @@
 .timesheets-page {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 32px;
+    padding-bottom: 50px;
 }
 
-.timesheet-card {
-    padding: 0;
-    overflow: hidden;
+.timesheet-layout {
     display: flex;
     flex-direction: column;
+    gap: 40px;
 }
 
-.timesheet-header-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    background-color: var(--bg-tertiary);
-    border-bottom: 1px solid var(--border-color);
+.performance-card {
+    border: 1px solid rgba(0,0,0,0.03);
+    border-radius: 24px !important;
+    box-shadow: 0 20px 50px -12px rgba(0,0,0,0.05) !important;
+    padding: 32px !important;
+    background: white;
 }
 
-.week-selector {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.current-week-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    font-size: 15px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-}
-
-.timesheet-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.timesheet-grid-wrapper {
-    overflow-x: auto;
-}
-
-.timesheet-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.timesheet-table th,
-.timesheet-table td {
-    border: 1px solid var(--border-color);
-}
-
-.timesheet-table th {
-    background-color: var(--bg-tertiary);
-    padding: 12px;
-    text-align: center;
-}
-
-.th-project {
-    text-align: left !important;
-    width: 300px;
-    padding-left: 24px !important;
-}
-
-.day-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.day-date {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.th-day {
-    width: 80px;
-}
-
-.th-day.weekend {
-    background-color: var(--bg-secondary);
-    opacity: 0.7;
-}
-
-.th-total {
-    width: 80px;
+.date-input-modern {
+    border: 2px solid #f1f5f9;
+    padding: 10px 20px;
+    border-radius: 14px;
     font-weight: 700;
-}
-
-.td-project {
-    padding: 16px 24px;
-}
-
-.ts-project-info {
-    margin-bottom: 8px;
     font-size: 14px;
-}
-
-.ts-project-info span {
-    color: var(--text-tertiary);
-    font-size: 12px;
-}
-
-.ts-task-input input {
-    width: 100%;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 13px;
-}
-
-.ts-task-input input:focus {
+    color: #1e293b;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.3s ease;
     outline: none;
-    color: var(--text-primary);
 }
 
-.td-hour {
-    padding: 0;
+.date-input-modern:hover {
+    border-color: var(--accent-primary);
+    background: white;
+}
+
+.date-input-modern:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.1);
+}
+
+.task-row {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
 }
 
-.td-hour.weekend {
-    background-color: rgba(0, 0, 0, 0.02);
+.task-row:hover {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    transform: translateX(4px);
 }
 
-[data-theme='dark'] .td-hour.weekend {
-    background-color: rgba(255, 255, 255, 0.02);
+.input-field {
+    border-radius: 12px !important;
+    border: 1.5px solid #f1f5f9 !important;
+    background: white !important;
+    font-size: 14px !important;
+    transition: all 0.2s !important;
 }
 
-.hour-input {
-    width: 100%;
-    height: 60px;
+.input-field:focus {
+    border-color: var(--accent-primary) !important;
+    box-shadow: none !important;
+}
+
+.text-btn {
+    background: none;
     border: none;
-    text-align: center;
-    font-size: 16px;
-    background: transparent;
-    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 10px;
+    transition: all 0.2s;
+    cursor: pointer;
 }
 
-.hour-input:focus {
-    outline: none;
-    background-color: var(--accent-light);
+.text-btn:hover {
+    background: rgba(var(--accent-rgb), 0.05);
+    transform: scale(1.02);
 }
 
-.hour-input.has-value {
-    color: var(--accent-primary);
-    font-weight: 700;
+/* Admin Feed Styles */
+.admin-column .card {
+    border-radius: 28px !important;
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.08) !important;
 }
 
-/* Hide arrows from number input */
-.hour-input::-webkit-outer-spin-button,
-.hour-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+.bg-primary {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
 }
 
-.td-total {
-    text-align: center;
-    background-color: var(--bg-tertiary);
+.divide-y > div:last-child {
+    border-bottom: none;
 }
 
-.row-total {
-    font-weight: 600;
-    font-size: 15px;
+/* History Grid */
+.card.p-4.hover\:shadow-md {
+    border: 1px solid #f1f5f9;
+    border-radius: 20px;
+    background: white;
 }
 
-.add-row-tr td {
-    border-top: none;
-    border-bottom: 2px dashed var(--border-color);
-    padding: 8px 24px;
+.italic {
+    font-style: italic;
 }
 
-.gap-2 {
-    gap: 8px;
+/* Responsive Overrides */
+@media (max-width: 768px) {
+    .task-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .task-row .flex-1,
+    .task-row .flex-\[3\] {
+        max-width: 100% !important;
+        width: 100%;
+    }
+    
+    .performance-card {
+        padding: 20px !important;
+    }
 }
 
-.py-2 {
-    padding-top: 8px;
-    padding-bottom: 8px;
+/* Custom Text utilities */
+.tracking-widest { letter-spacing: 0.1em; }
+.tracking-tighter { letter-spacing: -0.05em; }
+.font-black { font-weight: 900; }
+
+.shadow-accent\/20 {
+    box-shadow: 0 10px 20px -5px rgba(var(--accent-rgb), 0.3) !important;
 }
 
-.totals-row td {
-    background-color: var(--bg-tertiary);
-    padding: 16px 0;
+[data-theme='dark'] .performance-card,
+[data-theme='dark'] .card {
+    background: #1e293b;
+    border-color: rgba(255,255,255,0.05);
 }
 
-.text-right {
-    text-align: right;
+[data-theme='dark'] .bg-gray-50\/50 {
+    background: rgba(255,255,255,0.02);
 }
 
-.pr-4 {
-    padding-right: 24px;
-}
-
-.col-total {
-    text-align: center;
-    font-weight: 600;
-    font-size: 15px;
-}
-
-.col-total.overtime {
-    color: var(--warning);
-}
-
-.grand-total {
-    text-align: center;
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--accent-primary);
+[data-theme='dark'] .input-field {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: white !important;
 }

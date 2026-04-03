@@ -38,6 +38,54 @@ router.post('/me/avatar', protect, upload.single('file'), async (req, res, next)
     }
 });
 
+// @desc    Upload any user avatar (Admin/Manager only)
+// @route   POST /api/v1/users/:id/avatar
+// @access  Private/Admin/Manager
+router.post('/:id/avatar', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), upload.single('file'), async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'Please upload an image file' });
+        }
+
+        const fileUrl = req.file.path;
+
+        const user = await User.findByIdAndUpdate(req.params.id, { profilePicture: fileUrl }, {
+            new: true,
+            runValidators: true
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// @desc    Remove any user avatar (Admin/Manager only)
+// @route   DELETE /api/v1/users/:id/avatar
+// @access  Private/Admin/Manager
+router.delete('/:id/avatar', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), async (req, res, next) => {
+    try {
+        const user = await User.findByIdAndUpdate(req.params.id, { 
+            profilePicture: null 
+        }, {
+            new: true,
+            runValidators: true
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // @desc    Update user profile
 // @route   PUT /api/v1/users/me
 // @access  Private

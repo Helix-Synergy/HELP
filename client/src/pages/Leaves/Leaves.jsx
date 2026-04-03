@@ -19,6 +19,7 @@ const Leaves = () => {
     const [teamLeaves, setTeamLeaves] = useState([]);
     const [balances, setBalances] = useState([]);
     const [allBalances, setAllBalances] = useState([]);
+    const [holidays, setHolidays] = useState([]);
 
     const userStr = localStorage.getItem('hems_user');
     const user = userStr ? JSON.parse(userStr) : null;
@@ -32,6 +33,9 @@ const Leaves = () => {
 
     const fetchData = async () => {
         try {
+            const holidayRes = await api.get('/leaves/holidays');
+            setHolidays(holidayRes.data.data.map(h => new Date(h.date).toISOString().split('T')[0]));
+
             if (isAdmin) {
                 // Admin gets all balances and all requests
                 const allBalRes = await api.get('/leaves/all-balances');
@@ -114,8 +118,24 @@ const Leaves = () => {
 
     const calcDays = (start, end) => {
         if (!start || !end) return 1;
-        const diff = new Date(end) - new Date(start);
-        return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+        let count = 0;
+        const curDate = new Date(start);
+        const lastDate = new Date(end);
+
+        while (curDate <= lastDate) {
+            const dayOfWeek = curDate.getDay();
+            const dateStr = curDate.toISOString().split('T')[0];
+
+            // 0 = Sunday, 6 = Saturday
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const isHoliday = holidays.includes(dateStr);
+
+            if (!isWeekend && !isHoliday) {
+                count++;
+            }
+            curDate.setDate(curDate.getDate() + 1);
+        }
+        return count;
     };
 
     return (
