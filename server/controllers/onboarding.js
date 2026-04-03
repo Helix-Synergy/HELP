@@ -68,9 +68,7 @@ exports.uploadDocument = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Document requirement not found', 404));
     }
 
-    const protocol = req.protocol;
-    const host = req.get('host');
-    doc.fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+    doc.fileUrl = req.file.path;
     doc.status = 'SUBMITTED';
     doc.updatedAt = Date.now();
 

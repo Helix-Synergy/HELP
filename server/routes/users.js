@@ -25,9 +25,7 @@ router.post('/me/avatar', protect, upload.single('file'), async (req, res, next)
             return res.status(400).json({ success: false, error: 'Please upload an image file' });
         }
 
-        const protocol = req.protocol;
-        const host = req.get('host');
-        const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+        const fileUrl = req.file.path;
 
         const user = await User.findByIdAndUpdate(req.user.id, { profilePicture: fileUrl }, {
             new: true,
