@@ -1,46 +1,28 @@
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer Config
-const storage = multer.diskStorage({
-    destination(req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename(req, file, cb) {
-        cb(
-            null,
-            `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-        );
-    },
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const checkFileType = (file, cb) => {
-    const filetypes = /jpg|jpeg|png|pdf|doc|docx/;
-    const extname = filetypes.test(
-        path.extname(file.originalname).toLowerCase()
-    );
-    const mimetype = filetypes.test(file.mimetype);
-
-    if (extname && mimetype) {
-        return cb(null, true);
-    } else {
-        cb(new Error('Images and PDFs only!'), false);
-    }
-};
+// Configure Storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'hems_documents',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+    // Ensure PDFs and other docs are handled correctly
+    resource_type: 'auto' 
+  }
+});
 
 const upload = multer({
-    storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB Limit
-    fileFilter: function (req, file, cb) {
-        checkFileType(file, cb);
-    },
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB Limit
 });
 
 module.exports = upload;
