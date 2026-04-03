@@ -43,6 +43,7 @@ const Directory = () => {
                 status: u.status === 'ACTIVE' ? 'Active' : 'Inactive',
                 onboardingStatus: u.onboardingStatus,
                 initials: `${u.firstName[0]}${u.lastName[0]}`,
+                profilePicture: u.profilePicture,
                 raw: u
             }));
             setEmployees(formatted);
@@ -213,7 +214,13 @@ const Directory = () => {
                                     </div>
                                 </div>
                                 <div className="emp-card-body">
-                                    <div className="emp-avatar">{emp.initials}</div>
+                                    <div className="emp-avatar">
+                                        {emp.profilePicture ? (
+                                            <img src={emp.profilePicture} alt={emp.name} className="avatar-img" />
+                                        ) : (
+                                            emp.initials
+                                        )}
+                                    </div>
                                     <h3 className="emp-name">{emp.name}</h3>
                                     <p className="emp-role">{emp.role}</p>
                                     <span className="dept-pill">{emp.dept}</span>
@@ -251,7 +258,13 @@ const Directory = () => {
                                     <tr key={emp.id} className="cursor-pointer" onClick={() => handleEditClick(emp)}>
                                         <td>
                                             <div className="list-emp-info">
-                                                <div className="emp-avatar-small">{emp.initials}</div>
+                                                <div className="emp-avatar-small">
+                                                    {emp.profilePicture ? (
+                                                        <img src={emp.profilePicture} alt={emp.name} className="avatar-img-small" />
+                                                    ) : (
+                                                        emp.initials
+                                                    )}
+                                                </div>
                                                 <div>
                                                     <div className="emp-name-small">{emp.name}</div>
                                                     <div className="emp-email-small">{emp.email}</div>
