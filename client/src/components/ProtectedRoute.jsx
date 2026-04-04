@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-const ProtectedRoute = ({ allowedRoles }) => {
+const ProtectedRoute = ({ allowedRoles, children }) => {
     const token = localStorage.getItem('hems_token');
     const userStr = localStorage.getItem('hems_user');
     const location = useLocation();
@@ -29,7 +29,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
         return <Navigate to={path} replace />;
     }
 
-    return <Outlet />;
+    return children ? children : <Outlet />;
 };
 
 export default ProtectedRoute;
