@@ -25,6 +25,23 @@ import AddAsset from './pages/AddAsset/AddAsset';
 import Learning from './pages/Learning/Learning';
 import OrgChart from './pages/OrgChart/OrgChart';
 import Settings from './pages/Settings/Settings';
+import { useLocation } from 'react-router-dom';
+
+const DashboardRedirect = () => {
+  const userStr = localStorage.getItem('hems_user');
+  if (!userStr) return <Navigate to="/login" replace />;
+  
+  const user = JSON.parse(userStr);
+  const role = user.role;
+  
+  if (role === 'SUPER_ADMIN' || role === 'HR_ADMIN') {
+    return <Navigate to="/admin-dashboard" replace />;
+  } else if (role === 'MANAGER') {
+    return <Navigate to="/manager-dashboard" replace />;
+  } else {
+    return <Navigate to="/employee-dashboard" replace />;
+  }
+};
 
 function App() {
   useEffect(() => {
@@ -35,6 +52,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardRedirect /></ProtectedRoute>} />
 
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
@@ -47,7 +65,9 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             {/* All Employees */}
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin-dashboard" element={<Dashboard />} />
+            <Route path="/manager-dashboard" element={<Dashboard />} />
+            <Route path="/employee-dashboard" element={<Dashboard />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="leaves" element={<Leaves />} />
             <Route path="leaves/apply" element={<ApplyLeave />} />

@@ -50,7 +50,15 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
 
     const userRole = user?.role || 'EMPLOYEE';
 
-    let filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+    let filteredNavItems = navItems.filter(item => item.roles.includes(userRole)).map(item => {
+        if (item.title === 'Dashboard') {
+            let path = '/employee-dashboard';
+            if (userRole === 'SUPER_ADMIN' || userRole === 'HR_ADMIN') path = '/admin-dashboard';
+            else if (userRole === 'MANAGER') path = '/manager-dashboard';
+            return { ...item, path };
+        }
+        return item;
+    });
 
     // Strict Onboarding Filter
     if (userRole === 'EMPLOYEE' && user?.onboardingStatus !== 'COMPLETED') {

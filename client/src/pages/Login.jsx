@@ -27,7 +27,15 @@ const Login = () => {
             localStorage.setItem('hems_user', JSON.stringify(res.data.user));
 
             setIsLoading(false);
-            navigate('/dashboard');
+            
+            const role = res.data.user.role;
+            if (role === 'SUPER_ADMIN' || role === 'HR_ADMIN') {
+                navigate('/admin-dashboard');
+            } else if (role === 'MANAGER') {
+                navigate('/manager-dashboard');
+            } else {
+                navigate('/employee-dashboard');
+            }
         } catch (err) {
             setIsLoading(false);
             setError(err.response?.data?.error || 'Login failed. Please try again.');

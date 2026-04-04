@@ -534,7 +534,7 @@ const Onboarding = () => {
                         <CheckCircle size={80} className="text-success mx-auto mb-6 pulse" />
                         <h2 className="text-success text-3xl font-bold mb-2">You're All Set!</h2>
                         <p className="text-gray-600 mb-8">Congratulations! Your onboarding is complete. You can now access all features of the HEMS portal.</p>
-                        <button className="btn-primary" onClick={() => navigate('/dashboard')}>Go to Dashboard</button>
+                        <button className="btn-primary" onClick={() => navigate('/employee-dashboard')}>Go to Dashboard</button>
                     </div>
                 )}
             </div>

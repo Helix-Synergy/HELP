@@ -29,8 +29,24 @@
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
+}
+
+.employee-dashboard-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+@media (max-width: 1024px) {
+    .employee-dashboard-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .employee-dashboard-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 @media (max-width: 480px) {
@@ -80,9 +96,19 @@
     color: var(--accent-primary);
 }
 
+.stat-icon-wrapper.danger {
+    background-color: #FEE2E2;
+    color: var(--danger);
+}
+
 .stat-icon-wrapper.neutral {
     background-color: var(--bg-tertiary);
     color: var(--text-secondary);
+}
+
+.stat-icon-wrapper.inactive {
+    background-color: var(--bg-tertiary);
+    color: var(--text-tertiary);
 }
 
 .stat-value {
@@ -95,6 +121,25 @@
 .stat-trend {
     font-size: 13px;
     font-weight: 500;
+}
+
+.stat-card.interactive {
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card.interactive:not(.disabled):hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -10px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.interactive.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    filter: grayscale(0.5);
+    background-color: var(--bg-tertiary);
 }
 
 .text-success { color: var(--success); }
@@ -111,6 +156,192 @@
 
 .col-span-2 {
     grid-column: span 2;
+}
+
+/* Employee Dashboard Grid Styles */
+.employee-dashboard-grid .stat-card {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 32px !important;
+}
+
+/* Punch Hub Tile */
+.punch-hub-tile {
+    /* Standardized size now handled by grid-card class */
+    background: var(--bg-secondary);
+}
+
+.hub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.hub-date {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.hub-clock {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-primary);
+    font-family: 'Outfit', sans-serif;
+}
+
+.hub-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+}
+
+.hub-timer {
+    text-align: center;
+}
+
+.timer-value {
+    font-size: 48px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -2px;
+    color: var(--text-primary);
+}
+
+.timer-value.active {
+    color: var(--accent-primary);
+    text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.3);
+}
+
+.circular-punch-btn {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.circular-punch-btn.punch-in {
+    color: var(--success);
+}
+
+.circular-punch-btn.punch-out {
+    color: var(--danger);
+}
+
+.circular-punch-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+}
+
+.punch-icon {
+    margin-bottom: 8px;
+}
+
+.punch-text {
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.progress-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    opacity: 0.2;
+}
+
+.progress-ring__circle {
+    transition: 0.35s stroke-dashoffset;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.hub-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.location-pill {
+    background: var(--bg-tertiary);
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.break-link {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.break-link:hover:not(:disabled) {
+    color: var(--accent-primary);
+}
+
+.break-link:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Large Stat Cards */
+.large-stat-card {
+    /* Sizes now inherited from .employee-dashboard-grid .stat-card */
+}
+
+.large-stat-card .stat-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.large-stat-card .stat-icon-wrapper {
+    width: 64px;
+    height: 64px;
+}
+
+.large-stat-card .stat-icon-wrapper svg {
+    width: 32px;
+    height: 32px;
+}
+
+.large-stat-card .stat-value {
+    font-size: 36px;
+    margin: 20px 0;
 }
 
 @media (max-width: 1024px) {

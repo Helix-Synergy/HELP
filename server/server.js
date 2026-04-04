@@ -51,7 +51,10 @@ app.use('/api', limiter);
 
 // Serve static directory for uploads
 const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', (req, res, next) => {
+  res.set('Content-Disposition', 'inline');
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Database connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/hems')
@@ -75,6 +78,9 @@ app.use('/api/v1/helpdesk', require('./routes/helpdesk'));
 app.use('/api/v1/assets', require('./routes/assets'));
 app.use('/api/v1/learning', require('./routes/learning'));
 app.use('/api/v1/dashboard', require('./routes/dashboard'));
+app.use('/api/v1/announcements', require('./routes/announcements'));
+app.use('/api/v1/events', require('./routes/events'));
+app.use('/api/v1/holidays', require('./routes/holidays'));
 
 // Basic health check
 app.get('/', (req, res) => {

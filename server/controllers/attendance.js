@@ -49,29 +49,90 @@ exports.punch = asyncHandler(async (req, res, next) => {
     }
 
     // Find the last punch round
-    const lastPunch = attendance.punches[attendance.punches.length - 1];
+    const lastPunch = attendance.punches.length > 0 ? attendance.punches[attendance.punches.length - 1] : null;
 
-    if (!lastPunch.punchOut) {
-        // Punch Out
-        lastPunch.punchOut = nowUTC;
-
-        // Calculate total hours
-        let ms = 0;
-        attendance.punches.forEach(p => {
-            if (p.punchOut) {
-                ms += (new Date(p.punchOut) - new Date(p.punchIn));
-            }
-        });
-        attendance.totalHours = parseFloat((ms / (1000 * 60 * 60)).toFixed(2));
-
-        attendance.markModified('punches');
-        await attendance.save();
-        return res.status(200).json({ success: true, data: attendance, message: 'Punched Out' });
-    } else {
+    if (!lastPunch || lastPunch.punchOut) {
         // New Punch In
         attendance.punches.push({ punchIn: nowUTC, location, ipAddress });
         await attendance.save();
         return res.status(200).json({ success: true, data: attendance, message: 'Punched In Again' });
+    }
+
+    // Punch Out
+    const openBreak = lastPunch.breaks && lastPunch.breaks.find(b => !b.endTime);
+    if (openBreak) {
+        return next(new ErrorResponse('Please end your break before punching out', 400));
+    }
+
+    lastPunch.punchOut = nowUTC;
+
+    // Calculate total actual work hours (Sessions - Breaks)
+    let totalMs = 0;
+    attendance.punches.forEach(p => {
+        if (p.punchOut) {
+            let sessionMs = new Date(p.punchOut) - new Date(p.punchIn);
+            
+            // Subtract breaks within this session
+            let breakMs = 0;
+            if (p.breaks) {
+                p.breaks.forEach(b => {
+                    if (b.endTime) {
+                        breakMs += (new Date(b.endTime) - new Date(b.startTime));
+                    }
+                });
+            }
+            totalMs += (sessionMs - breakMs);
+        }
+    });
+
+    attendance.totalHours = parseFloat((totalMs / (1000 * 60 * 60)).toFixed(2));
+    attendance.markModified('punches');
+    await attendance.save();
+    return res.status(200).json({ success: true, data: attendance, message: 'Punched Out' });
+});
+
+// @desc    Start/End Break
+// @route   POST /api/v1/attendance/break
+// @access  Private
+exports.toggleBreak = asyncHandler(async (req, res, next) => {
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const nowUTC = new Date();
+    const nowIST = new Date(nowUTC.getTime() + istOffset);
+    
+    const istTodayStart = new Date(nowIST);
+    istTodayStart.setUTCHours(0, 0, 0, 0);
+    const todayStartUTC = new Date(istTodayStart.getTime() - istOffset);
+    const todayEndUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
+
+    const attendance = await Attendance.findOne({
+        user: req.user.id,
+        date: { $gte: todayStartUTC, $lt: todayEndUTC }
+    });
+
+    if (!attendance) {
+        return next(new ErrorResponse('Must punch in before starting a break', 400));
+    }
+
+    const lastPunch = attendance.punches[attendance.punches.length - 1];
+    if (!lastPunch || lastPunch.punchOut) {
+        return next(new ErrorResponse('No active punch session found', 400));
+    }
+
+    if (!lastPunch.breaks) lastPunch.breaks = [];
+    const activeBreak = lastPunch.breaks.find(b => !b.endTime);
+
+    if (activeBreak) {
+        // End Break
+        activeBreak.endTime = nowUTC;
+        attendance.markModified('punches');
+        await attendance.save();
+        return res.status(200).json({ success: true, data: attendance, message: 'Break Ended' });
+    } else {
+        // Start Break
+        lastPunch.breaks.push({ startTime: nowUTC });
+        attendance.markModified('punches');
+        await attendance.save();
+        return res.status(200).json({ success: true, data: attendance, message: 'Break Started' });
     }
 });
 

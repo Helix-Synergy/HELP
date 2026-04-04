@@ -6,6 +6,7 @@ import './Attendance.css';
 
 const Attendance = () => {
     const [isCheckedIn, setIsCheckedIn] = useState(false);
+    const [isOnBreak, setIsOnBreak] = useState(false);
     const [timePassed, setTimePassed] = useState(0); // in seconds
     const [currentDate, setCurrentDate] = useState(new Date());
     const [recentActivity, setRecentActivity] = useState([]);
@@ -80,14 +81,34 @@ const Attendance = () => {
 
                     if (lastPunch && !lastPunch.punchOut) {
                         setIsCheckedIn(true);
-                        const activeSeconds = Math.floor((new Date() - new Date(lastPunch.punchIn)) / 1000);
-                        initialTimePassed += activeSeconds;
+                        
+                        // Check for active break
+                        const activeBreak = lastPunch.breaks?.find(b => !b.endTime);
+                        if (activeBreak) {
+                            setIsOnBreak(true);
+                        } else {
+                            setIsOnBreak(false);
+                            const activeSeconds = Math.floor((new Date() - new Date(lastPunch.punchIn)) / 1000);
+                            
+                            // Subtract all COMPLETED breaks in this session from the active timer
+                            let breakSeconds = 0;
+                            if (lastPunch.breaks) {
+                                lastPunch.breaks.forEach(b => {
+                                    if (b.endTime) {
+                                        breakSeconds += Math.floor((new Date(b.endTime) - new Date(b.startTime)) / 1000);
+                                    }
+                                });
+                            }
+                            initialTimePassed += (activeSeconds - breakSeconds);
+                        }
                     } else {
                         setIsCheckedIn(false);
+                        setIsOnBreak(false);
                     }
                     setTimePassed(initialTimePassed);
                 } else {
                     setIsCheckedIn(false);
+                    setIsOnBreak(false);
                     setTimePassed(0);
                 }
 
@@ -140,26 +161,62 @@ const Attendance = () => {
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentDate(new Date());
-            if (isCheckedIn) {
+            if (isCheckedIn && !isOnBreak) {
                 setTimePassed(prev => prev + 1);
             }
         }, 1000);
         return () => clearInterval(timer);
-    }, [isCheckedIn]);
+    }, [isCheckedIn, isOnBreak]);
 
     const handlePunch = async () => {
         setIsLoading(true);
+
+        if (isOnBreak) {
+            alert('Please end your break before punching out!');
+            setIsLoading(false);
+            return;
+        }
+
+        const performPunch = async (lat = 40.7128, lng = -74.0060) => {
+            try {
+                const payload = {
+                    location: { lat, lng },
+                    ipAddress: '192.168.1.1'
+                };
+                const res = await api.post('/attendance/punch', payload);
+                setIsCheckedIn(!isCheckedIn);
+                await fetchMyAttendance();
+            } catch (err) {
+                console.error('Punch failed', err);
+                alert('Failed to punch: ' + (err.response?.data?.error || err.message));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    performPunch(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    console.warn("Geolocation failing, falling back to default:", error.message);
+                    performPunch(); // fallback
+                }
+            );
+        } else {
+            performPunch();
+        }
+    };
+
+    const handleBreakToggle = async () => {
+        setIsLoading(true);
         try {
-            const payload = {
-                location: { lat: 40.7128, lng: -74.0060 },
-                ipAddress: '192.168.1.1'
-            };
-            const res = await api.post('/attendance/punch', payload);
-            setIsCheckedIn(!isCheckedIn);
+            await api.post('/attendance/break');
+            setIsOnBreak(!isOnBreak);
             await fetchMyAttendance();
         } catch (err) {
-            console.error('Punch failed', err);
-            alert('Failed to punch: ' + (err.response?.data?.error || err.message));
+            alert('Break action failed: ' + (err.response?.data?.error || err.message));
         } finally {
             setIsLoading(false);
         }
@@ -278,7 +335,13 @@ const Attendance = () => {
                             </div>
 
                             <div className="quick-actions-row">
-                                <button className="btn-icon-text" disabled={!isCheckedIn}><Coffee size={16} /> Start Break</button>
+                                <button 
+                                    className={`btn-icon-text ${isOnBreak ? 'active-break animate-pulse' : ''}`} 
+                                    onClick={handleBreakToggle} 
+                                    disabled={!isCheckedIn || isLoading}
+                                >
+                                    <Coffee size={16} /> {isOnBreak ? 'End Break' : 'Start Break'}
+                                </button>
                             </div>
                         </div>
                     </div>

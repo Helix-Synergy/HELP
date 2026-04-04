@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-    FileText, Eye, CheckCircle, XCircle, ArrowLeft, 
+    FileText, Eye, CheckCircle, XCircle, ArrowLeft, X,
     User, Mail, Phone, Calendar, MapPin, CreditCard, 
     Briefcase, ShieldCheck, HeartPulse, Building2,
-    ClipboardList, AlertCircle, Clock, UserCheck
+    ClipboardList, AlertCircle, Clock, UserCheck, Upload
 } from 'lucide-react';
 import api from '../../api/axios';
 import './Onboarding.css';
@@ -18,6 +18,19 @@ const OnboardingDetails = () => {
     const [verifyRemarks, setVerifyRemarks] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+
+    const getFileUrl = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http')) {
+            // For PDFs on Cloudinary/S3, use Google Docs Viewer to ensure they open in-browser
+            if (url.toLowerCase().endsWith('.pdf')) {
+                return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}`;
+            }
+            return url;
+        }
+        const backendBase = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.split('/api/v1')[0] : 'http://localhost:5000';
+        return `${backendBase}/${url.replace(/\\/g, '/')}`;
+    };
 
     useEffect(() => {
         fetchDetails();
@@ -146,7 +159,7 @@ const OnboardingDetails = () => {
                 <div className="flex items-center gap-5">
                     <div className="w-20 h-20 rounded-2xl bg-accent/10 flex items-center justify-center text-accent relative group overflow-hidden border-2 border-transparent hover:border-accent/30 transition-all">
                         {user?.profilePicture ? (
-                            <img src={user.profilePicture} alt="Avatar" className="w-full h-full object-cover" />
+                            <img src={getFileUrl(user.profilePicture)} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
                             <div className="text-3xl font-bold">{user?.firstName?.[0]}{user?.lastName?.[0]}</div>
                         )}
@@ -211,9 +224,9 @@ const OnboardingDetails = () => {
                                     <div className="flex items-center gap-3">
                                         {doc.fileUrl ? (
                                             <a 
-                                                href={doc.fileUrl} 
+                                                href={getFileUrl(doc.fileUrl)} 
                                                 target="_blank" 
-                                                rel="noreferrer" 
+                                                rel="noopener noreferrer" 
                                                 className="flex items-center gap-2 text-accent font-bold text-sm bg-accent/5 px-4 py-2 rounded-lg hover:bg-accent/10 transition-colors"
                                             >
                                                 <Eye size={16} /> View

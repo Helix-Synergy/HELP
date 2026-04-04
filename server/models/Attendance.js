@@ -7,7 +7,11 @@ const PunchSchema = new mongoose.Schema({
         lat: { type: Number },
         lng: { type: Number }
     },
-    ipAddress: { type: String }
+    ipAddress: { type: String },
+    breaks: [{
+        startTime: { type: Date },
+        endTime: { type: Date }
+    }]
 });
 
 const AttendanceSchema = new mongoose.Schema({

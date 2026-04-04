@@ -24,6 +24,7 @@ exports.triggerOnboarding = asyncHandler(async (req, res, next) => {
         detail = await OnboardingDetail.create({
             user: user._id,
             documents: [
+                { name: 'Passport Size Photo', required: true },
                 { name: 'Aadhar Card', required: true },
                 { name: 'PAN Card', required: true },
                 { name: 'Education Certificates', required: true },
@@ -109,6 +110,9 @@ exports.verifyDocuments = asyncHandler(async (req, res, next) => {
                     },
                     { upsert: true, new: true }
                 );
+                if (doc.name === 'Passport Size Photo') {
+                    await User.findByIdAndUpdate(req.params.userId, { profilePicture: doc.fileUrl });
+                }
             }
         }
         await User.findByIdAndUpdate(req.params.userId, { onboardingStatus: 'FORM_PENDING' });
@@ -193,7 +197,7 @@ exports.verifyForm = asyncHandler(async (req, res, next) => {
 // @access  Private (Admin)
 exports.getOnboardingByUser = asyncHandler(async (req, res, next) => {
     const detail = await OnboardingDetail.findOne({ user: req.params.userId })
-        .populate('user', 'firstName lastName email onboardingStatus');
+        .populate('user', 'firstName lastName email onboardingStatus profilePicture');
     
     if (!detail) {
         return next(new ErrorResponse('Onboarding not found for this user', 404));

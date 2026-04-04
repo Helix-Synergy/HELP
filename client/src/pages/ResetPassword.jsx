@@ -73,7 +73,14 @@ const ResetPassword = () => {
                                 <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
                                 <h3 className="text-xl font-bold mb-2">Password changed!</h3>
                                 <p className="text-secondary mb-6">Your password has been successfully reset. You are now logged in.</p>
-                                <button className="btn-primary w-full" onClick={() => navigate('/dashboard')}>
+                                <button className="btn-primary w-full" onClick={() => {
+                                    const userStr = localStorage.getItem('hems_user');
+                                    const user = userStr ? JSON.parse(userStr) : null;
+                                    const role = user?.role;
+                                    if (role === 'SUPER_ADMIN' || role === 'HR_ADMIN') navigate('/admin-dashboard');
+                                    else if (role === 'MANAGER') navigate('/manager-dashboard');
+                                    else navigate('/employee-dashboard');
+                                }}>
                                     Go to Dashboard
                                 </button>
                             </div>
