@@ -8,6 +8,7 @@ import {
     ClipboardList, AlertCircle, Clock, UserCheck, Upload
 } from 'lucide-react';
 import api from '../../api/axios';
+import DocumentPreview from '../../components/DocumentPreview/DocumentPreview';
 import './Onboarding.css';
 
 const OnboardingDetails = () => {
@@ -18,6 +19,9 @@ const OnboardingDetails = () => {
     const [verifyRemarks, setVerifyRemarks] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+    
+    // Preview state
+    const [previewFile, setPreviewFile] = useState({ url: '', name: '', open: false });
 
     const getFileUrl = (url) => {
         if (!url) return '';
@@ -223,14 +227,12 @@ const OnboardingDetails = () => {
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {doc.fileUrl ? (
-                                            <a 
-                                                href={getFileUrl(doc.fileUrl)} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer" 
+                                            <button 
+                                                onClick={() => setPreviewFile({ url: doc.fileUrl, name: doc.name, open: true })}
                                                 className="flex items-center gap-2 text-accent font-bold text-sm bg-accent/5 px-4 py-2 rounded-lg hover:bg-accent/10 transition-colors"
                                             >
                                                 <Eye size={16} /> View
-                                            </a>
+                                            </button>
                                         ) : (
                                             <span className="text-danger text-xs font-bold bg-danger/5 px-3 py-1 rounded-full">Missing</span>
                                         )}
@@ -478,6 +480,13 @@ const OnboardingDetails = () => {
                     </aside>
                 </div>
             </div>
+
+            <DocumentPreview 
+                isOpen={previewFile.open}
+                onClose={() => setPreviewFile({ ...previewFile, open: false })}
+                fileUrl={previewFile.url}
+                fileName={previewFile.name}
+            />
         </motion.div>
     );
 };

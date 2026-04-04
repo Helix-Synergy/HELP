@@ -7,6 +7,7 @@ import {
     ChevronRight, Briefcase, Award, PhoneCall
 } from 'lucide-react';
 import api from '../../api/axios';
+import DocumentPreview from '../../components/DocumentPreview/DocumentPreview';
 import './Onboarding.css';
 
 const Onboarding = () => {
@@ -27,6 +28,9 @@ const Onboarding = () => {
     // Modals
     const [showTriggerModal, setShowTriggerModal] = useState(false);
     const [isUploading, setIsUploading] = useState(null);
+
+    // Preview state
+    const [previewFile, setPreviewFile] = useState({ url: '', name: '', open: false });
 
     useEffect(() => {
         const userStr = localStorage.getItem('hems_user');
@@ -364,11 +368,30 @@ const Onboarding = () => {
                                         ) : doc.status !== 'APPROVED' && (
                                             <label className="btn-secondary py-1 px-4 text-sm cursor-pointer hover:bg-gray-100">
                                                 <Upload size={14} className="mr-2 inline" /> {doc.fileUrl ? 'Change' : 'Upload'}
-                                                <input type="file" className="hidden" onChange={(e) => handleFileUpload(doc._id, e.target.files[0])} />
+                                                <input 
+                                                    type="file" 
+                                                    className="hidden" 
+                                                    accept={doc.name === 'Passport Size Photo' ? "image/png, image/jpeg, image/jpg" : ".pdf, .jpg, .jpeg, .png"}
+                                                    onChange={(e) => {
+                                                        const file = e.target.files[0];
+                                                        if (doc.name === 'Passport Size Photo' && file && !file.type.startsWith('image/')) {
+                                                            alert('Please upload an image file (PNG, JPG) for the Passport Photo.');
+                                                            e.target.value = '';
+                                                            return;
+                                                        }
+                                                        handleFileUpload(doc._id, file);
+                                                    }} 
+                                                />
                                             </label>
                                         )}
                                         {doc.fileUrl && !isUploading && (
-                                            <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-2 hover:bg-gray-50 rounded-lg"><Eye size={18} /></a>
+                                            <button 
+                                                className="p-2 hover:bg-gray-50 rounded-lg text-accent"
+                                                onClick={() => setPreviewFile({ url: doc.fileUrl, name: doc.name, open: true })}
+                                                title="View Document"
+                                            >
+                                                <Eye size={18} />
+                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -538,6 +561,13 @@ const Onboarding = () => {
                     </div>
                 )}
             </div>
+
+            <DocumentPreview 
+                isOpen={previewFile.open}
+                onClose={() => setPreviewFile({ ...previewFile, open: false })}
+                fileUrl={previewFile.url}
+                fileName={previewFile.name}
+            />
         </motion.div>
     );
 };

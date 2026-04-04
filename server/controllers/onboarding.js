@@ -69,6 +69,11 @@ exports.uploadDocument = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Document requirement not found', 404));
     }
 
+    // Restriction: Passport Size Photo must be an image
+    if (doc.name === 'Passport Size Photo' && !req.file.mimetype.startsWith('image/')) {
+        return next(new ErrorResponse('Please upload an image file (PNG/JPG) for the Passport Photo', 400));
+    }
+
     doc.fileUrl = req.file.path;
     doc.status = 'SUBMITTED';
     doc.updatedAt = Date.now();

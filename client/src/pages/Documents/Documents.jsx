@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, File, UploadCloud, Search, MoreVertical, FileText, Download, Trash2, XCircle } from 'lucide-react';
 import api from '../../api/axios';
+import DocumentPreview from '../../components/DocumentPreview/DocumentPreview';
 import './Documents.css';
 
 const Documents = () => {
@@ -9,6 +10,9 @@ const Documents = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const fileInputRef = useRef(null);
+
+    // Preview state
+    const [previewFile, setPreviewFile] = useState({ url: '', name: '', open: false });
 
     // Auth Check
     const userStr = localStorage.getItem('hems_user');
@@ -153,9 +157,12 @@ const Documents = () => {
                                 <td>
                                     <div className="file-name-cell">
                                         <FileText className="text-secondary mr-2" size={18} />
-                                        <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+                                        <button 
+                                            onClick={() => setPreviewFile({ url: file.fileUrl, name: file.title, open: true })}
+                                            style={{ color: 'inherit', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+                                        >
                                             {file.title}
-                                        </a>
+                                        </button>
                                     </div>
                                 </td>
                                 <td><span className="file-badge">{getFileExtension(file.title)}</span></td>
@@ -165,7 +172,14 @@ const Documents = () => {
                                 <td><span className="text-secondary">{formatDate(file.createdAt)}</span></td>
                                 <td>
                                     <div className="file-actions">
-                                        <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" className="icon-btn-small" title="Download/View">
+                                        <button 
+                                            onClick={() => setPreviewFile({ url: file.fileUrl, name: file.title, open: true })}
+                                            className="icon-btn-small" 
+                                            title="View Document"
+                                        >
+                                            <Eye size={16} />
+                                        </button>
+                                        <a href={file.fileUrl} download className="icon-btn-small" title="Download">
                                             <Download size={16} />
                                         </a>
                                         <button className="icon-btn-small text-danger" title="Delete" onClick={() => handleDelete(file._id)}>
@@ -189,6 +203,12 @@ const Documents = () => {
                 <p className="text-secondary">(Max file size: 10MB - PDFs & Images only)</p>
             </div>
 
+            <DocumentPreview 
+                isOpen={previewFile.open}
+                onClose={() => setPreviewFile({ ...previewFile, open: false })}
+                fileUrl={previewFile.url}
+                fileName={previewFile.name}
+            />
         </motion.div>
     );
 };
