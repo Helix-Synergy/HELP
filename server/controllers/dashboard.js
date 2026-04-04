@@ -60,15 +60,26 @@ exports.getSystemStats = asyncHandler(async (req, res, next) => {
 // @route   GET /api/v1/dashboard/manager-stats
 // @access  Private/Manager
 exports.getManagerStats = asyncHandler(async (req, res, next) => {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
+    // Standard IST offset (UTC + 5:30) used across the system
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const nowUTC = new Date();
+    const nowIST = new Date(nowUTC.getTime() + istOffset);
+    
+    // Calculate IST Today Start (00:00) and End (23:59) in UTC
+    const istTodayStart = new Date(nowIST);
+    istTodayStart.setUTCHours(0, 0, 0, 0);
+    const todayStartUTC = new Date(istTodayStart.getTime() - istOffset);
+    const todayEndUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
 
     // 1. Identify team members
     const teamEmployees = await User.find({ managerId: req.user.id, status: 'ACTIVE' });
     const teamIds = teamEmployees.map(u => u._id);
     const totalTeamCount = teamIds.length;
+
+    console.log(`[Dashboard] Manager ${req.user.id} (${req.user.firstName}) - Team members found: ${totalTeamCount}`);
+    if (totalTeamCount > 0) {
+        console.log(`[Dashboard] Team IDs: ${teamIds.join(', ')}`);
+    }
 
     if (totalTeamCount === 0) {
         return res.status(200).json({
@@ -86,7 +97,7 @@ exports.getManagerStats = asyncHandler(async (req, res, next) => {
     // 2. Present Today
     const presentTodayCount = await Attendance.countDocuments({
         user: { $in: teamIds },
-        date: { $gte: startOfToday, $lte: endOfToday },
+        date: { $gte: todayStartUTC, $lt: todayEndUTC },
         status: { $in: ['PRESENT', 'LATE', 'HALF_DAY', 'REGULARIZED'] }
     });
 
@@ -99,37 +110,36 @@ exports.getManagerStats = asyncHandler(async (req, res, next) => {
     // 4. Team Leaves Today
     const leavesTodayCount = await LeaveRequest.countDocuments({
         user: { $in: teamIds },
-        startDate: { $lte: endOfToday },
-        endDate: { $gte: startOfToday },
+        startDate: { $lte: todayEndUTC },
+        endDate: { $gte: todayStartUTC },
         status: 'APPROVED'
     });
 
     // 5. Timesheets Due (Members who haven't submitted today)
     const submittedTimesheetsCount = await Timesheet.countDocuments({
         user: { $in: teamIds },
-        date: { $gte: startOfToday, $lte: endOfToday }
+        date: { $gte: todayStartUTC, $lt: todayEndUTC }
     });
     const timesheetsDueCount = Math.max(0, totalTeamCount - submittedTimesheetsCount);
 
     // 6. Attendance Trend (Last 7 days)
     const activityTrend = [];
     for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const s = new Date(d.setHours(0, 0, 0, 0));
-        const e = new Date(d.setHours(23, 59, 59, 999));
+        const start = new Date(todayStartUTC.getTime() - (i * 24 * 60 * 60 * 1000));
+        const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
         
         const count = await Attendance.countDocuments({
             user: { $in: teamIds },
-            date: { $gte: s, $lte: e },
+            date: { $gte: start, $lt: end },
             status: { $in: ['PRESENT', 'LATE', 'HALF_DAY', 'REGULARIZED'] }
         });
         
         activityTrend.push({
-            name: s.toLocaleDateString('en-US', { weekday: 'short' }),
+            name: start.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'Asia/Kolkata' }),
             present: count
         });
     }
+
 
     const attendancePercentage = totalTeamCount > 0 ? Math.round((presentTodayCount / totalTeamCount) * 100) : 0;
 
