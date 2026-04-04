@@ -453,13 +453,39 @@ const EmployeeDashboard = () => {
 };
 
 const ManagerDashboard = () => {
-    const [attendanceData, setAttendanceData] = useState([
-        { name: 'Mon', present: 85 },
-        { name: 'Tue', present: 92 },
-        { name: 'Wed', present: 88 },
-        { name: 'Thu', present: 94 },
-        { name: 'Fri', present: 90 }
-    ]);
+    const [stats, setStats] = useState({
+        attendancePercentage: 0,
+        pendingLeaves: 0,
+        leavesToday: 0,
+        timesheetsDue: 0,
+        activityData: []
+    });
+    const [loading, setLoading] = useState(true);
+
+    const fetchManagerStats = async () => {
+        try {
+            const res = await api.get('/dashboard/manager-stats');
+            if (res.data.success) {
+                setStats(res.data.data);
+            }
+        } catch (err) {
+            console.error("Error fetching manager stats:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchManagerStats();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            </div>
+        );
+    }
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="dashboard-content-layer">
@@ -468,10 +494,28 @@ const ManagerDashboard = () => {
                 <p>Monitor your team's performance and pending tasks.</p>
             </div>
             <div className="stats-grid">
-                <StatCard title="Team Attendance" value="94%" icon={<Users size={20} />} trend="2%" isPositive={true} />
-                <StatCard title="Pending Leaves" value="8" icon={<Clock size={20} />} isPositive={false} />
-                <StatCard title="Team Leaves Today" value="3" icon={<Calendar size={20} />} />
-                <StatCard title="Timesheets Due" value="12" icon={<CheckCircle size={20} />} />
+                <StatCard 
+                    title="Team Attendance" 
+                    value={`${stats.attendancePercentage}%`} 
+                    icon={<Users size={20} />} 
+                    isPositive={stats.attendancePercentage >= 90} 
+                />
+                <StatCard 
+                    title="Pending Leaves" 
+                    value={String(stats.pendingLeaves)} 
+                    icon={<Clock size={20} />} 
+                    isPositive={false} 
+                />
+                <StatCard 
+                    title="Team Leaves Today" 
+                    value={String(stats.leavesToday)} 
+                    icon={<Calendar size={20} />} 
+                />
+                <StatCard 
+                    title="Timesheets Due" 
+                    value={String(stats.timesheetsDue)} 
+                    icon={<CheckCircle size={20} />} 
+                />
             </div>
             <div className="dashboard-row">
                 <div className="card full-height col-span-2">
@@ -479,26 +523,33 @@ const ManagerDashboard = () => {
                         <h3>Team Capacity Trend</h3>
                     </div>
                     <div className="card-body" style={{ height: '300px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={attendanceData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorTeam" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
-                                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
-                                <Area type="monotone" dataKey="present" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorTeam)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        {stats.activityData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats.activityData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorTeam" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
+                                    <Area type="monotone" dataKey="present" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorTeam)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-secondary italic">
+                                No attendance data available for the last 7 days.
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
         </motion.div>
     );
 };
+
 
 const HRDashboard = () => (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="dashboard-content-layer">

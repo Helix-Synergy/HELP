@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Folder, File, UploadCloud, Search, MoreVertical, FileText, Download, Trash2, XCircle } from 'lucide-react';
+import { Folder, File, UploadCloud, Search, MoreVertical, FileText, Download, Trash2, XCircle, Eye } from 'lucide-react';
 import api from '../../api/axios';
 import DocumentPreview from '../../components/DocumentPreview/DocumentPreview';
 import './Documents.css';
