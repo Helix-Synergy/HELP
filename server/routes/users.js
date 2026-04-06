@@ -219,7 +219,8 @@ router.put('/:id', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), asy
             performanceFactor: req.body.performanceFactor,
             isPFApplicable: req.body.isPFApplicable,
             isBonusApplicable: req.body.isBonusApplicable,
-            taxPercent: req.body.taxPercent
+            taxPercent: req.body.taxPercent,
+            managerId: req.body.managerId === '' ? null : req.body.managerId
         };
 
         console.log(`[UpdateUser] Updating user ${req.params.id} with:`, fieldsToUpdate);

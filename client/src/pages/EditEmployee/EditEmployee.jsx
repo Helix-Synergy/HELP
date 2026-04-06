@@ -35,12 +35,30 @@ const EditEmployee = () => {
         performanceFactor: 100,
         isPFApplicable: true,
         isBonusApplicable: true,
-        taxPercent: 0
+        taxPercent: 0,
+        managerId: ''
     });
+    const [managers, setManagers] = useState([]);
 
     useEffect(() => {
         fetchEmployee();
+        fetchManagers();
     }, [id]);
+
+    const fetchManagers = async () => {
+        try {
+            const res = await api.get('/users');
+            if (res.data.success) {
+                // Potential managers are anyone with MANAGER, HR_ADMIN, or SUPER_ADMIN role
+                const potentialManagers = res.data.data.filter(u => 
+                    ['MANAGER', 'HR_ADMIN', 'SUPER_ADMIN'].includes(u.role) && u._id !== id
+                );
+                setManagers(potentialManagers);
+            }
+        } catch (err) {
+            console.error("Failed to fetch managers:", err);
+        }
+    };
 
     const fetchEmployee = async () => {
         setLoading(true);
@@ -68,7 +86,8 @@ const EditEmployee = () => {
                     performanceFactor: raw.performanceFactor !== undefined ? raw.performanceFactor : 100,
                     isPFApplicable: raw.isPFApplicable !== undefined ? raw.isPFApplicable : true,
                     isBonusApplicable: raw.isBonusApplicable !== undefined ? raw.isBonusApplicable : true,
-                    taxPercent: raw.taxPercent || 0
+                    taxPercent: raw.taxPercent || 0,
+                    managerId: raw.managerId || ''
                 });
             }
         } catch (err) {
@@ -359,6 +378,21 @@ const EditEmployee = () => {
                                         <option value="INACTIVE">Resigned / Inactive</option>
                                         <option value="PROBATION">Probation</option>
                                         <option value="NOTICE_PERIOD">Notice Period</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Reporting Manager</label>
+                                    <select 
+                                        className="input-field" 
+                                        value={formData.managerId} 
+                                        onChange={e => setFormData({ ...formData, managerId: e.target.value })}
+                                    >
+                                        <option value="">No Manager (Self/Direct)</option>
+                                        {managers.map(m => (
+                                            <option key={m._id} value={m._id}>
+                                                {m.firstName} {m.lastName} ({m.role.replace('_', ' ')})
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="form-group">
