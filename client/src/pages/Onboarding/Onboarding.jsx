@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    CheckCircle, Clock, AlertTriangle, ArrowRight, UserPlus, 
-    FileText, Monitor, Check, Upload, Eye, X, UserCheck, 
+import {
+    CheckCircle, Clock, AlertTriangle, ArrowRight, UserPlus,
+    FileText, Monitor, Check, Upload, Eye, X, UserCheck,
     ChevronRight, Briefcase, Award, PhoneCall
 } from 'lucide-react';
 import api from '../../api/axios';
@@ -15,16 +15,16 @@ const Onboarding = () => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
-    
+
     // Employee perspective
     const [myOnboarding, setMyOnboarding] = useState(null);
     const [onboardingStatus, setOnboardingStatus] = useState('NOT_JOINED');
-    
+
     // Admin perspective
     const [onboardingUsers, setOnboardingUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
     const [userDetails, setUserDetails] = useState(null);
-    
+
     // Modals
     const [showTriggerModal, setShowTriggerModal] = useState(false);
     const [isUploading, setIsUploading] = useState(null);
@@ -37,7 +37,7 @@ const Onboarding = () => {
         const currentUser = userStr ? JSON.parse(userStr) : null;
         setUser(currentUser);
         setIsAdmin(['SUPER_ADMIN', 'HR_ADMIN'].includes(currentUser?.role));
-        
+
         if (currentUser) {
             if (['SUPER_ADMIN', 'HR_ADMIN'].includes(currentUser.role)) {
                 fetchAdminData();
@@ -53,7 +53,7 @@ const Onboarding = () => {
             const res = await api.get('/onboarding/me');
             setMyOnboarding(res.data.data);
             setOnboardingStatus(res.data.onboardingStatus);
-            
+
             // Sync status with localStorage
             const userStr = localStorage.getItem('hems_user');
             if (userStr) {
@@ -61,7 +61,7 @@ const Onboarding = () => {
                 if (currentUser.onboardingStatus !== res.data.onboardingStatus) {
                     currentUser.onboardingStatus = res.data.onboardingStatus;
                     localStorage.setItem('hems_user', JSON.stringify(currentUser));
-                    window.dispatchEvent(new Event('userChange')); 
+                    window.dispatchEvent(new Event('userChange'));
                 }
             }
         } catch (error) {
@@ -159,7 +159,7 @@ const Onboarding = () => {
 
     // Helper for progress percentage
     const getProgress = (status) => {
-        switch(status) {
+        switch (status) {
             case 'DOCUMENTS_PENDING': return 25;
             case 'DOCUMENTS_SUBMITTED': return 40;
             case 'DOCUMENTS_VERIFIED': return 50;
@@ -215,7 +215,7 @@ const Onboarding = () => {
                                                 <div className="bg-accent h-2 rounded-full" style={{ width: `${getProgress(u.onboardingStatus)}%` }}></div>
                                             </div>
                                         </td>
-                                         <td className="text-right">
+                                        <td className="text-right">
                                             {u.onboardingStatus === 'DOCUMENTS_SUBMITTED' && (
                                                 <button className="btn-primary py-1 px-3 text-sm" onClick={() => handleActionClick(u._id)}>
                                                     Verify Docs
@@ -267,7 +267,7 @@ const Onboarding = () => {
                                                     <div className="font-semibold">{emp.firstName} {emp.lastName}</div>
                                                     <div className="text-xs text-secondary">{emp.email}</div>
                                                 </div>
-                                                <button 
+                                                <button
                                                     className="bg-accent/10 text-accent px-3 py-1 rounded-md text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity"
                                                     onClick={() => handleTriggerOnboarding(emp._id)}
                                                 >
@@ -282,7 +282,7 @@ const Onboarding = () => {
                                     </div>
                                 )}
                             </div>
-                            <button 
+                            <button
                                 className="w-full mt-4 btn-secondary"
                                 onClick={() => setShowTriggerModal(false)}
                             >
@@ -297,12 +297,12 @@ const Onboarding = () => {
 
     // Employee Perspective
     const progress = getProgress(onboardingStatus);
-    
+
     return (
         <motion.div className="onboarding-page" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div className="directory-header mb-8">
                 <div>
-                    <h1 className="page-title">Welcome to the Team!</h1>
+                    <h1 className="page-title">Welcome to the Helix Synergy Corp!</h1>
                     <p className="page-subtitle">
                         {onboardingStatus === 'COMPLETED' ? "You've successfully joined the team." : "Please complete your onboarding process to access all features."}
                     </p>
@@ -315,7 +315,7 @@ const Onboarding = () => {
                     <span className="text-accent font-bold">{progress}% Complete</span>
                 </div>
                 <div className="progress-bar-container h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <motion.div 
+                    <motion.div
                         className="progress-bar-fill h-full bg-accent"
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
@@ -338,7 +338,7 @@ const Onboarding = () => {
                         </div>
                         <h2 className="mb-2">Phase 1: Documents</h2>
                         <p className="text-secondary mb-8">Please upload all mandatory documents to proceed.</p>
-                        
+
                         <div className="space-y-4 text-left">
                             {myOnboarding?.documents.map(doc => (
                                 <div key={doc._id} className="document-upload-row p-4 border rounded-xl flex items-center justify-between">
@@ -368,9 +368,9 @@ const Onboarding = () => {
                                         ) : doc.status !== 'APPROVED' && (
                                             <label className="btn-secondary py-1 px-4 text-sm cursor-pointer hover:bg-gray-100">
                                                 <Upload size={14} className="mr-2 inline" /> {doc.fileUrl ? 'Change' : 'Upload'}
-                                                <input 
-                                                    type="file" 
-                                                    className="hidden" 
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
                                                     accept={doc.name === 'Passport Size Photo' ? "image/png, image/jpeg, image/jpg" : ".pdf, .jpg, .jpeg, .png"}
                                                     onChange={(e) => {
                                                         const file = e.target.files[0];
@@ -380,12 +380,12 @@ const Onboarding = () => {
                                                             return;
                                                         }
                                                         handleFileUpload(doc._id, file);
-                                                    }} 
+                                                    }}
                                                 />
                                             </label>
                                         )}
                                         {doc.fileUrl && !isUploading && (
-                                            <button 
+                                            <button
                                                 className="p-2 hover:bg-gray-50 rounded-lg text-accent"
                                                 onClick={() => setPreviewFile({ url: doc.fileUrl, name: doc.name, open: true })}
                                                 title="View Document"
@@ -399,7 +399,7 @@ const Onboarding = () => {
                         </div>
 
                         <div className="mt-10 pt-6 border-t flex flex-col items-center">
-                            <button 
+                            <button
                                 className="btn-primary px-12 py-3 shadow-lg shadow-accent/20 flex items-center gap-2"
                                 onClick={handleSubmitDocs}
                                 disabled={myOnboarding?.documents.some(d => d.required && d.status === 'PENDING')}
@@ -562,7 +562,7 @@ const Onboarding = () => {
                 )}
             </div>
 
-            <DocumentPreview 
+            <DocumentPreview
                 isOpen={previewFile.open}
                 onClose={() => setPreviewFile({ ...previewFile, open: false })}
                 fileUrl={previewFile.url}
