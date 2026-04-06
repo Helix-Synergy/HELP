@@ -34,7 +34,7 @@ const Leaves = () => {
     const fetchData = async () => {
         try {
             const holidayRes = await api.get('/leaves/holidays');
-            setHolidays(holidayRes.data.data.map(h => new Date(h.date).toISOString().split('T')[0]));
+            setHolidays(holidayRes.data.data);
 
             if (isAdmin) {
                 // Admin gets all balances and all requests
@@ -128,7 +128,7 @@ const Leaves = () => {
 
             // 0 = Sunday, 6 = Saturday
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const isHoliday = holidays.includes(dateStr);
+            const isHoliday = holidays.some(h => new Date(h.date).toISOString().split('T')[0] === dateStr);
 
             if (!isWeekend && !isHoliday) {
                 count++;
@@ -232,20 +232,21 @@ const Leaves = () => {
                                 <h3>Upcoming Organization Holidays</h3>
                             </div>
                             <div className="holiday-list">
-                                <div className="holiday-item">
-                                    <div className="holiday-date">Mar 30</div>
-                                    <div className="holiday-details">
-                                        <h4>Good Friday</h4>
-                                        <p>National Holiday</p>
-                                    </div>
-                                </div>
-                                <div className="holiday-item">
-                                    <div className="holiday-date">May 01</div>
-                                    <div className="holiday-details">
-                                        <h4>Labor Day</h4>
-                                        <p>National Holiday</p>
-                                    </div>
-                                </div>
+                                {holidays.length > 0 ? (
+                                    holidays.slice(0, 3).map((h, idx) => (
+                                        <div key={idx} className="holiday-item">
+                                            <div className="holiday-date">
+                                                {new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}
+                                            </div>
+                                            <div className="holiday-details">
+                                                <h4>{h.name}</h4>
+                                                <p>{h.type || 'Organization'} Holiday</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-secondary p-3 italic">No upcoming holidays.</div>
+                                )}
                             </div>
                             <button className="btn-secondary w-100 mt-4"><CalendarOff size={16} /> View Full Calendar</button>
                         </div>

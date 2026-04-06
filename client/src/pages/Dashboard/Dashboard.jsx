@@ -575,6 +575,7 @@ const SuperAdminDashboard = () => {
         pendingItems: '0',
         activityData: []
     });
+    const [holidays, setHolidays] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -608,8 +609,20 @@ const SuperAdminDashboard = () => {
         }
     };
 
+    const fetchHolidays = async () => {
+        try {
+            const res = await api.get('/holidays');
+            if (res.data.success) {
+                setHolidays(res.data.data);
+            }
+        } catch (err) {
+            console.error("Error fetching holidays:", err);
+        }
+    };
+
     useEffect(() => {
         fetchStats();
+        fetchHolidays();
     }, []);
 
     const handleCreateAnn = async () => {
@@ -645,12 +658,22 @@ const SuperAdminDashboard = () => {
         try {
             await api.post('/holidays', holiForm);
             alert('Holiday added successfully!');
-            setShowHoliModal(false);
             setHoliForm({ name: '', date: '', type: 'NATIONAL', description: '' });
+            fetchHolidays();
         } catch (err) {
             alert('Failed to add holiday: ' + (err.response?.data?.error || err.message));
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteHoli = async (id) => {
+        if (!window.confirm('Are you sure you want to remove this holiday?')) return;
+        try {
+            await api.delete(`/holidays/${id}`);
+            fetchHolidays();
+        } catch (err) {
+            alert('Failed to delete holiday: ' + (err.response?.data?.error || err.message));
         }
     };
 
@@ -859,64 +882,96 @@ const SuperAdminDashboard = () => {
                 {showHoliModal && (
                     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
                         <motion.div 
-                            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                         >
                             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                                <h3 className="font-bold text-lg">Add Company Holiday</h3>
+                                <h3 className="font-bold text-lg">Manage Organization Holidays</h3>
                                 <button onClick={() => setShowHoliModal(false)}><X size={20} /></button>
                             </div>
-                            <div className="p-6">
-                                <div className="space-y-4">
-                                    <div className="form-group">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Holiday Name</label>
-                                        <input 
-                                            type="text" 
-                                            className="input-field mt-1" 
-                                            placeholder="e.g. Independence Day"
-                                            value={holiForm.name}
-                                            onChange={(e) => setHoliForm({...holiForm, name: e.target.value})}
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Date</label>
-                                        <input 
-                                            type="date" 
-                                            className="input-field mt-1"
-                                            value={holiForm.date}
-                                            onChange={(e) => setHoliForm({...holiForm, date: e.target.value})}
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Type</label>
-                                        <select 
-                                            className="input-field mt-1"
-                                            value={holiForm.type}
-                                            onChange={(e) => setHoliForm({...holiForm, type: e.target.value})}
-                                        >
-                                            <option value="NATIONAL">National Holiday</option>
-                                            <option value="REGIONAL">Regional Holiday</option>
-                                            <option value="COMPANY">Company Holiday</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
-                                        <textarea 
-                                            className="input-field mt-1 min-h-[80px]" 
-                                            placeholder="Quick description..."
-                                            value={holiForm.description}
-                                            onChange={(e) => setHoliForm({...holiForm, description: e.target.value})}
-                                        />
+                            <div className="p-0 flex flex-col md:flex-row h-[500px]">
+                                {/* Left Side: List */}
+                                <div className="w-full md:w-1/2 border-r border-gray-100 overflow-y-auto p-6 bg-gray-50/50">
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase mb-4">Scheduled Holidays</h4>
+                                    <div className="space-y-3">
+                                        {holidays.length > 0 ? (
+                                            holidays.map((h) => (
+                                                <div key={h._id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
+                                                    <div className="overflow-hidden">
+                                                        <div className="font-bold text-sm truncate">{h.name}</div>
+                                                        <div className="text-[10px] text-tertiary flex items-center gap-1">
+                                                            <Calendar size={10} /> {new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        className="p-2 text-danger hover:bg-red-50 rounded-lg transition-colors"
+                                                        onClick={() => handleDeleteHoli(h._id)}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-8 text-tertiary italic text-sm">No holidays found.</div>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-                            <div className="p-6 bg-gray-50 flex justify-end gap-3">
-                                <button className="btn-secondary" onClick={() => setShowHoliModal(false)}>Cancel</button>
-                                <button className="btn-primary" disabled={isSubmitting} onClick={handleCreateHoli}>
-                                    {isSubmitting ? 'Saving...' : 'Add Holiday'}
-                                </button>
+
+                                {/* Right Side: Add Form */}
+                                <div className="w-full md:w-1/2 p-6 overflow-y-auto">
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase mb-4 text-accent-primary">Add New Holiday</h4>
+                                    <div className="space-y-4">
+                                        <div className="form-group">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Holiday Name</label>
+                                            <input 
+                                                type="text" 
+                                                className="input-field mt-1" 
+                                                placeholder="e.g. Independence Day"
+                                                value={holiForm.name}
+                                                onChange={(e) => setHoliForm({...holiForm, name: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Date</label>
+                                            <input 
+                                                type="date" 
+                                                className="input-field mt-1"
+                                                value={holiForm.date}
+                                                onChange={(e) => setHoliForm({...holiForm, date: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Type</label>
+                                            <select 
+                                                className="input-field mt-1"
+                                                value={holiForm.type}
+                                                onChange={(e) => setHoliForm({...holiForm, type: e.target.value})}
+                                            >
+                                                <option value="NATIONAL">National Holiday</option>
+                                                <option value="REGIONAL">Regional Holiday</option>
+                                                <option value="COMPANY">Company Holiday</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
+                                            <textarea 
+                                                className="input-field mt-1 min-h-[60px]" 
+                                                placeholder="Quick description..."
+                                                value={holiForm.description}
+                                                onChange={(e) => setHoliForm({...holiForm, description: e.target.value})}
+                                            />
+                                        </div>
+                                        <button 
+                                            className="btn-primary w-full py-3" 
+                                            disabled={isSubmitting} 
+                                            onClick={handleCreateHoli}
+                                        >
+                                            {isSubmitting ? 'Saving...' : 'Confirm & Add'}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
