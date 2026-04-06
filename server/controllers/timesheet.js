@@ -27,9 +27,10 @@ exports.getTimesheets = asyncHandler(async (req, res, next) => {
 exports.createTimesheet = asyncHandler(async (req, res, next) => {
     req.body.user = req.user.id;
 
-    // We use a normalized date (midnight) to ensure unique daily entries
-    const logDate = new Date(req.body.date);
-    logDate.setHours(0, 0, 0, 0);
+    // NEW: Align with Attendance IST normalization
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const dateObj = new Date(req.body.date); // e.g. 2026-04-06
+    const logDate = new Date(dateObj.getTime() - istOffset);
 
     // Manually calculate total hours because findOneAndUpdate doesn't trigger pre-save hooks
     const totalHours = req.body.tasks.reduce((sum, task) => sum + (Number(task.hours) || 0), 0);

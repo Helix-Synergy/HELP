@@ -228,7 +228,9 @@ const Attendance = () => {
                 await fetchMyAttendance();
             } catch (err) {
                 console.error('Punch failed', err);
-                alert('Failed to punch: ' + (err.response?.data?.error || err.message));
+                const errorMsg = err.response?.data?.error || err.message;
+                alert(errorMsg);
+
             } finally {
                 setIsLoading(false);
             }

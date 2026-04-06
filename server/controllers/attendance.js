@@ -1,6 +1,8 @@
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const Attendance = require('../models/Attendance');
+const Timesheet = require('../models/Timesheet');
+
 
 // @desc    Punch In / Punch Out
 // @route   POST /api/v1/attendance/punch
@@ -62,6 +64,16 @@ exports.punch = asyncHandler(async (req, res, next) => {
     const openBreak = lastPunch.breaks && lastPunch.breaks.find(b => !b.endTime);
     if (openBreak) {
         return next(new ErrorResponse('Please end your break before punching out', 400));
+    }
+
+    // NEW: Enforce Work Log Submission before Punch Out
+    const timesheet = await Timesheet.findOne({
+        user: req.user.id,
+        date: todayStartUTC
+    });
+
+    if (!timesheet) {
+        return next(new ErrorResponse('Please submit log work', 400));
     }
 
     lastPunch.punchOut = nowUTC;
