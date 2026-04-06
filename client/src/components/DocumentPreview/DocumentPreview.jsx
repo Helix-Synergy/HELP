@@ -5,17 +5,6 @@ import { X, ExternalLink, Download, FileText, AlertCircle } from 'lucide-react';
 const DocumentPreview = ({ isOpen, onClose, fileUrl, fileName }) => {
     if (!isOpen) return null;
 
-    const isImage = fileUrl && (
-        fileUrl.toLowerCase().endsWith('.jpg') || 
-        fileUrl.toLowerCase().endsWith('.jpeg') || 
-        fileUrl.toLowerCase().endsWith('.png') || 
-        fileUrl.toLowerCase().endsWith('.gif') ||
-        fileUrl.toLowerCase().endsWith('.webp') ||
-        fileUrl.includes('image')
-    );
-
-    const isPdf = fileUrl && fileUrl.toLowerCase().endsWith('.pdf');
-
     // Helper for backend served files vs external
     const getFullUrl = (url) => {
         if (!url) return '';
@@ -25,9 +14,24 @@ const DocumentPreview = ({ isOpen, onClose, fileUrl, fileName }) => {
     };
 
     const fullUrl = getFullUrl(fileUrl);
+    
+    // Priority check for PDFs to avoid Cloudinary 'image/upload' URL false positives
+    const isPdf = fullUrl && (
+        fullUrl.toLowerCase().endsWith('.pdf') || 
+        fullUrl.toLowerCase().includes('.pdf?')
+    );
 
-    // PDF viewer fallback - Google Docs Viewer for better in-browser experience if standard iframe fails
-    const pdfUrl = isPdf ? `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true` : fullUrl;
+    const isImage = !isPdf && fullUrl && (
+        fullUrl.toLowerCase().endsWith('.jpg') || 
+        fullUrl.toLowerCase().endsWith('.jpeg') || 
+        fullUrl.toLowerCase().endsWith('.png') || 
+        fullUrl.toLowerCase().endsWith('.gif') ||
+        fullUrl.toLowerCase().endsWith('.webp') ||
+        fullUrl.toLowerCase().includes('image/')
+    );
+
+    // PDF viewer - Use Google Docs Viewer for better in-browser experience across environments
+    const pdfViewerUrl = isPdf ? `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true` : fullUrl;
 
     return (
         <AnimatePresence>
@@ -89,9 +93,9 @@ const DocumentPreview = ({ isOpen, onClose, fileUrl, fileName }) => {
                                 className="max-w-full max-h-full object-contain rounded shadow-lg bg-white"
                             />
                         ) : isPdf ? (
-                            /* Try direct iframe first, then fallback to Google Docs if it fails or use both as options */
+                            /* Use Google Docs Viewer for maximum cross-origin reliability */
                             <iframe 
-                                src={fullUrl} 
+                                src={pdfViewerUrl} 
                                 title={fileName}
                                 className="w-full h-full rounded border-0 shadow-lg bg-white"
                             >
