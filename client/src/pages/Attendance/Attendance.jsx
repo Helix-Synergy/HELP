@@ -18,6 +18,9 @@ const Attendance = () => {
         id: '', userId: '', date: '', punches: [], status: 'PRESENT'
     });
 
+    const [weeklyStats, setWeeklyStats] = useState({ actual: 0, target: 40 });
+    const [monthlyStats, setMonthlyStats] = useState({ deficit: 0, actual: 0 });
+
     // Get user from local storage
     const userStr = localStorage.getItem('hems_user');
     const user = userStr ? JSON.parse(userStr) : null;
@@ -112,7 +115,45 @@ const Attendance = () => {
                     setTimePassed(0);
                 }
 
-                // 2. Handle Recent Activity (Session-based)
+                // 2. Calculate Weekly & Monthly Statistics
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
+                startOfWeek.setHours(0, 0, 0, 0);
+
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(today.getDate() - 30);
+                thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+                let weekHours = 0;
+                let monthActual = 0;
+                let workDaysInLast30 = 0;
+
+                records.forEach(record => {
+                    const rDate = new Date(record.date);
+                    const hours = record.totalHours || 0;
+
+                    if (rDate >= startOfWeek) {
+                        weekHours += hours;
+                    }
+
+                    if (rDate >= thirtyDaysAgo) {
+                        monthActual += hours;
+                    }
+                });
+
+                // Calculate target for last 30 days (8h per WEEKDAY)
+                for (let d = new Date(thirtyDaysAgo); d <= today; d.setDate(d.getDate() + 1)) {
+                    const dayOfWeek = d.getDay();
+                    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sat or Sun
+                        workDaysInLast30++;
+                    }
+                }
+
+                const monthTarget = workDaysInLast30 * 8;
+                setWeeklyStats({ actual: weekHours, target: 40 });
+                setMonthlyStats({ actual: monthActual, deficit: monthActual - monthTarget });
+
+                // 3. Handle Recent Activity (Session-based)
                 let allSessions = [];
                 // Process up to 5 recent days
                 records.slice(0, 5).forEach(record => {
@@ -143,8 +184,8 @@ const Attendance = () => {
                             punchIn: new Date(p.punchIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                             punchOut: p.punchOut ? new Date(p.punchOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (isToday ? "---" : "No Punch Out"),
                             duration: durationStr,
-                            location: p.location?.name || 'Office',
-                            status: 'Normal'
+                            location: p.location?.name || 'Remote/Office',
+                            status: record.status || 'Normal'
                         });
                     });
                 });
@@ -180,8 +221,7 @@ const Attendance = () => {
         const performPunch = async (lat = 40.7128, lng = -74.0060) => {
             try {
                 const payload = {
-                    location: { lat, lng },
-                    ipAddress: '192.168.1.1'
+                    location: { lat, lng }
                 };
                 const res = await api.post('/attendance/punch', payload);
                 setIsCheckedIn(!isCheckedIn);
@@ -331,7 +371,7 @@ const Attendance = () => {
                             </motion.button>
 
                             <div className="punch-info">
-                                <div className="info-pill"><MapPin size={14} /> New York Office (IP: 192.168.1.1)</div>
+                                <div className="info-pill"><MapPin size={14} /> {isCheckedIn ? 'Currently Clocked In' : 'Ready to Punch'}</div>
                             </div>
 
                             <div className="quick-actions-row">
@@ -353,12 +393,35 @@ const Attendance = () => {
                         <div className="quick-stats">
                             <div className="card mini-stat">
                                 <div className="mini-stat-title">This Week</div>
-                                <div className="mini-stat-val text-success">38h 45m</div>
-                                <div className="mini-stat-desc">Target: 40h (96%)</div>
+                                <div className="mini-stat-val text-success">
+                                    {(() => {
+                                        const todayRecord = allAttendance.find(r => new Date(r.date).toDateString() === new Date().toDateString());
+                                        const baseWeekly = weeklyStats.actual - (todayRecord?.totalHours || 0);
+                                        const currentTotal = baseWeekly + (timePassed / 3600);
+                                        return `${Math.floor(currentTotal)}h ${Math.round((currentTotal % 1) * 60)}m`;
+                                    })()}
+                                </div>
+                                <div className="mini-stat-desc">
+                                    {(() => {
+                                        const todayRecord = allAttendance.find(r => new Date(r.date).toDateString() === new Date().toDateString());
+                                        const baseWeekly = weeklyStats.actual - (todayRecord?.totalHours || 0);
+                                        const currentTotal = baseWeekly + (timePassed / 3600);
+                                        const pct = Math.round((currentTotal / weeklyStats.target) * 100);
+                                        return `Target: ${weeklyStats.target}h (${pct}%)`;
+                                    })()}
+                                </div>
                             </div>
                             <div className="card mini-stat">
                                 <div className="mini-stat-title">Deficit / Overtimes</div>
-                                <div className="mini-stat-val text-warning">+2h 15m</div>
+                                <div className={`mini-stat-val ${monthlyStats.deficit >= 0 ? 'text-success' : 'text-warning'}`}>
+                                    {(() => {
+                                        const todayRecord = allAttendance.find(r => new Date(r.date).toDateString() === new Date().toDateString());
+                                        const baseMonthly = monthlyStats.deficit - (todayRecord?.totalHours || 0);
+                                        const currentDeficit = baseMonthly + (timePassed / 3600);
+                                        const absVal = Math.abs(currentDeficit);
+                                        return `${currentDeficit >= 0 ? '+' : '-'}${Math.floor(absVal)}h ${Math.round((absVal % 1) * 60)}m`;
+                                    })()}
+                                </div>
                                 <div className="mini-stat-desc">Last 30 days</div>
                             </div>
                         </div>
