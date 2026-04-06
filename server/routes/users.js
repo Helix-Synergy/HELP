@@ -154,8 +154,16 @@ router.post('/', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), async
             return res.status(400).json({ success: false, error: 'User with this email already exists' });
         }
 
-        const count = await User.countDocuments();
-        const employeeId = `HEMS-${(count + 1).toString().padStart(4, '0')}`;
+        // Find the user with the highest employee ID to avoid collisions after deletions
+        const lastUser = await User.findOne({ employeeId: /^HEMS-/ }).sort({ employeeId: -1 });
+        let nextNumber = 1;
+        if (lastUser && lastUser.employeeId) {
+            const lastNumber = parseInt(lastUser.employeeId.split('-')[1]);
+            if (!isNaN(lastNumber)) {
+                nextNumber = lastNumber + 1;
+            }
+        }
+        const employeeId = `HEMS-${nextNumber.toString().padStart(4, '0')}`;
 
         // Create user with basic info - other details will be filled during onboarding
         const user = await User.create({

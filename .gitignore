@@ -48,3 +48,9 @@ server/check_local_db.js
 server/verify_local.js
 server/seed_atlas.js
 server/test_login_local.js
+server/cleanup_orphans.js
+server/list_ids.js
+server/check_specific_ids.js
+check_duplicates.js
+check_duplicates_v2.js
+server/list_admins.js
