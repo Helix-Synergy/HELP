@@ -502,3 +502,111 @@
 .status-late { background: var(--warning) !important; }
 .status-half_day { background: #6366f1 !important; }
 .status-regularized { background: #0ea5e9 !important; }
+
+/* Geo & IP Details */
+.emp-card-geo {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.geo-session {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--bg-tertiary);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.geo-point {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.geo-lbl {
+    font-weight: 700;
+    color: var(--text-tertiary);
+    min-width: 50px;
+    font-size: 9px;
+    text-transform: uppercase;
+}
+
+.geo-val {
+    font-family: monospace;
+    background: var(--bg-primary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.geo-coords {
+    color: var(--text-secondary);
+    font-size: 10px;
+}
+
+/* Zoho-inspired Hardware Icons */
+.geo-device {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 4px;
+    margin: 0 4px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1.5px solid transparent;
+    cursor: help;
+}
+
+/* Zoho Amber for Mobile */
+.geo-device.mobile {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* Zoho Teal/Cyan for Desktop */
+.geo-device.desktop {
+    background: rgba(13, 148, 136, 0.1);
+    color: #0d9488;
+    border-color: rgba(13, 148, 136, 0.25);
+}
+
+.geo-device:hover {
+    transform: translateY(-1px) scale(1.1);
+}
+
+.geo-device.mobile:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+}
+
+.geo-device.desktop:hover {
+    background: rgba(13, 148, 136, 0.2);
+    border-color: #0d9488;
+}
+
+/* Card Name Header Device Icon */
+.device-indicator-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.device-indicator-mini.mobile {
+    color: #f59e0b; /* Zoho Amber */
+}
+
+.device-indicator-mini.desktop {
+    color: #0d9488; /* Zoho Teal */
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Play, Square, MapPin, Coffee, AlertCircle, FileText, Filter, User as UserIcon, Calendar, X, Plus } from 'lucide-react';
+import { Clock, Play, Square, MapPin, Coffee, AlertCircle, FileText, Filter, User as UserIcon, Calendar, X, Plus, Smartphone, Monitor } from 'lucide-react';
 import api from '../../api/axios';
 import './Attendance.css';
 
@@ -209,6 +209,17 @@ const Attendance = () => {
         return () => clearInterval(timer);
     }, [isCheckedIn, isOnBreak]);
 
+    const getDeviceType = () => {
+        const ua = navigator.userAgent;
+        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+            return "Mobile"; // Tablet
+        }
+        if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+            return "Mobile";
+        }
+        return "Desktop";
+    };
+
     const handlePunch = async () => {
         setIsLoading(true);
 
@@ -218,10 +229,11 @@ const Attendance = () => {
             return;
         }
 
-        const performPunch = async (lat = 40.7128, lng = -74.0060) => {
+        const performPunch = async (location = null) => {
             try {
-                const payload = {
-                    location: { lat, lng }
+                const payload = { 
+                    location,
+                    deviceType: getDeviceType()
                 };
                 const res = await api.post('/attendance/punch', payload);
                 setIsCheckedIn(!isCheckedIn);
@@ -239,15 +251,19 @@ const Attendance = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    performPunch(position.coords.latitude, position.coords.longitude);
+                    performPunch({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
                 },
                 (error) => {
-                    console.warn("Geolocation failing, falling back to default:", error.message);
-                    performPunch(); // fallback
-                }
+                    console.warn("Geolocation failing:", error.message);
+                    performPunch(null); 
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
             );
         } else {
-            performPunch();
+            performPunch(null);
         }
     };
 
@@ -486,7 +502,14 @@ const Attendance = () => {
                                                 <UserIcon size={20} />
                                             </div>
                                             <div className="emp-card-info">
-                                                <span className="emp-card-name">{record.user?.firstName} {record.user?.lastName}</span>
+                                                <div className="name-with-device" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    {record.punches && record.punches.length > 0 && (
+                                                        <span className={`device-indicator-mini ${record.punches[record.punches.length - 1].punchInDevice?.toLowerCase()}`}>
+                                                            {record.punches[record.punches.length - 1].punchInDevice === 'Mobile' ? <Smartphone size={14} /> : <Monitor size={14} />}
+                                                        </span>
+                                                    )}
+                                                    <span className="emp-card-name" style={{ display: 'block' }}>{record.user?.firstName} {record.user?.lastName}</span>
+                                                </div>
                                                 <span className="emp-card-id">{record.user?.employeeId}</span>
                                             </div>
                                             <span className={`status-badge status-${record.status?.toLowerCase()}`}>
@@ -550,6 +573,36 @@ const Attendance = () => {
                                                         : '--:--'}
                                                 </span>
                                             </div>
+                                        </div>
+
+                                         {/* Geo & IP Details for Admin */}
+                                        <div className="emp-card-geo">
+                                            {record.punches?.map((p, idx) => (
+                                                <div key={idx} className="geo-session">
+                                                    <div className="geo-point">
+                                                        <span className="geo-lbl">P{idx + 1} IN:</span>
+                                                        <span className={`geo-device ${p.punchInDevice?.toLowerCase()}`} title={p.punchInDevice}>
+                                                            {p.punchInDevice === 'Mobile' ? <Smartphone size={10} /> : <Monitor size={10} />}
+                                                        </span>
+                                                        <span className="geo-val">{p.punchInIP || 'N/A'}</span>
+                                                        {p.punchInLocation && (
+                                                            <span className="geo-coords">({p.punchInLocation.lat.toFixed(4)}, {p.punchInLocation.lng.toFixed(4)})</span>
+                                                        )}
+                                                    </div>
+                                                    {p.punchOut && (
+                                                        <div className="geo-point">
+                                                            <span className="geo-lbl">P{idx + 1} OUT:</span>
+                                                            <span className={`geo-device ${p.punchOutDevice?.toLowerCase()}`} title={p.punchOutDevice}>
+                                                                {p.punchOutDevice === 'Mobile' ? <Smartphone size={10} /> : <Monitor size={10} />}
+                                                            </span>
+                                                            <span className="geo-val">{p.punchOutIP || 'N/A'}</span>
+                                                            {p.punchOutLocation && (
+                                                                <span className="geo-coords">({p.punchOutLocation.lat.toFixed(4)}, {p.punchOutLocation.lng.toFixed(4)})</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
                                     </motion.div>
                                 ))}

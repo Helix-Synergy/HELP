@@ -8,13 +8,16 @@ const Timesheet = require('../models/Timesheet');
 // @route   POST /api/v1/attendance/punch
 // @access  Private (Employee)
 exports.punch = asyncHandler(async (req, res, next) => {
-    const { location, ipAddress } = req.body;
-    
+    const { location, ipAddress, deviceType } = req.body;
+
+    // Capture client IP robustly
+    const clientIP = ipAddress || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
     // Get current time in IST (UTC + 5:30)
     const nowUTC = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
     const nowIST = new Date(nowUTC.getTime() + istOffset);
-    
+
     // Calculate IST Today Start (00:00) in UTC for database consistency
     const istTodayStart = new Date(nowIST);
     istTodayStart.setUTCHours(0, 0, 0, 0);
@@ -30,21 +33,24 @@ exports.punch = asyncHandler(async (req, res, next) => {
     });
 
     if (!attendance) {
-        // Enforce 10:05 AM IST Deadline (except for Super Admin)
-        const istHour = nowIST.getUTCHours();
-        const istMinute = nowIST.getUTCMinutes();
+        // CHECK: Time restriction 10:05 AM IST
+        const punchHour = nowIST.getUTCHours();
+        const punchMinute = nowIST.getUTCMinutes();
         
-        if (req.user.role !== 'SUPER_ADMIN') {
-            if (istHour > 10 || (istHour === 10 && istMinute > 5)) {
-                return next(new ErrorResponse('out of time', 400));
-            }
+        if (punchHour > 10 || (punchHour === 10 && punchMinute > 5)) {
+            return next(new ErrorResponse('Punch In is restricted after 10:05 AM IST', 400));
         }
 
         // Punch In
         attendance = await Attendance.create({
             user: req.user.id,
             date: todayStartUTC,
-            punches: [{ punchIn: nowUTC, location, ipAddress }],
+            punches: [{
+                punchIn: nowUTC,
+                punchInLocation: location,
+                punchInIP: clientIP,
+                punchInDevice: deviceType || 'Desktop'
+            }],
             status: 'PRESENT'
         });
         return res.status(200).json({ success: true, data: attendance, message: 'Punched In' });
@@ -54,8 +60,21 @@ exports.punch = asyncHandler(async (req, res, next) => {
     const lastPunch = attendance.punches.length > 0 ? attendance.punches[attendance.punches.length - 1] : null;
 
     if (!lastPunch || lastPunch.punchOut) {
+        // CHECK: Time restriction 10:05 AM IST
+        const punchHour = nowIST.getUTCHours();
+        const punchMinute = nowIST.getUTCMinutes();
+        
+        if (punchHour > 10 || (punchHour === 10 && punchMinute > 5)) {
+            return next(new ErrorResponse('Punch In is restricted after 10:05 AM IST', 400));
+        }
+
         // New Punch In
-        attendance.punches.push({ punchIn: nowUTC, location, ipAddress });
+        attendance.punches.push({
+            punchIn: nowUTC,
+            punchInLocation: location,
+            punchInIP: clientIP,
+            punchInDevice: deviceType || 'Desktop'
+        });
         await attendance.save();
         return res.status(200).json({ success: true, data: attendance, message: 'Punched In Again' });
     }
@@ -76,14 +95,18 @@ exports.punch = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Please submit log work', 400));
     }
 
+    // Record Punch Out details
     lastPunch.punchOut = nowUTC;
+    lastPunch.punchOutLocation = location;
+    lastPunch.punchOutIP = clientIP;
+    lastPunch.punchOutDevice = deviceType || 'Desktop';
 
     // Calculate total actual work hours (Sessions - Breaks)
     let totalMs = 0;
     attendance.punches.forEach(p => {
         if (p.punchOut) {
             let sessionMs = new Date(p.punchOut) - new Date(p.punchIn);
-            
+
             // Subtract breaks within this session
             let breakMs = 0;
             if (p.breaks) {
@@ -110,7 +133,7 @@ exports.toggleBreak = asyncHandler(async (req, res, next) => {
     const istOffset = 5.5 * 60 * 60 * 1000;
     const nowUTC = new Date();
     const nowIST = new Date(nowUTC.getTime() + istOffset);
-    
+
     const istTodayStart = new Date(nowIST);
     istTodayStart.setUTCHours(0, 0, 0, 0);
     const todayStartUTC = new Date(istTodayStart.getTime() - istOffset);
@@ -163,17 +186,17 @@ exports.getAllAttendance = asyncHandler(async (req, res, next) => {
     const User = require('../models/User');
     let query = {};
     let filterDate = null;
-    
+
     // If a specific date is provided, use it
     if (req.query.date) {
         // Normalize input string to IST Midnight represented in UTC
         const istOffset = 5.5 * 60 * 60 * 1000;
         const inputDate = new Date(req.query.date);
-        inputDate.setUTCHours(0, 0, 0, 0); 
-        
+        inputDate.setUTCHours(0, 0, 0, 0);
+
         const queryStartUTC = new Date(inputDate.getTime() - istOffset);
         const queryEndUTC = new Date(queryStartUTC.getTime() + 24 * 60 * 60 * 1000);
-        
+
         query.date = {
             $gte: queryStartUTC,
             $lt: queryEndUTC
@@ -182,10 +205,10 @@ exports.getAllAttendance = asyncHandler(async (req, res, next) => {
     } else if (req.query.year && req.query.month) {
         const year = parseInt(req.query.year);
         const month = parseInt(req.query.month) - 1;
-        
+
         const startDate = new Date(year, month, 1);
         const endDate = new Date(year, month + 1, 1);
-        
+
         query.date = {
             $gte: startDate,
             $lt: endDate
@@ -194,7 +217,7 @@ exports.getAllAttendance = asyncHandler(async (req, res, next) => {
         const year = parseInt(req.query.year);
         const startDate = new Date(year, 0, 1);
         const endDate = new Date(year + 1, 0, 1);
-        
+
         query.date = {
             $gte: startDate,
             $lt: endDate
@@ -213,12 +236,12 @@ exports.getAllAttendance = asyncHandler(async (req, res, next) => {
     if (filterDate) {
         const allUsers = await User.find({ status: 'ACTIVE' })
             .select('firstName lastName employeeId');
-        
+
         // Find users who have attendance records for this date
         const usersWithAttendance = new Set(
             attendance.map(a => a.user?._id?.toString()).filter(Boolean)
         );
-        
+
         // Create "absent" records for employees without attendance
         const absentRecords = allUsers
             .filter(u => !usersWithAttendance.has(u._id.toString()))
@@ -236,7 +259,7 @@ exports.getAllAttendance = asyncHandler(async (req, res, next) => {
                 status: 'ABSENT',
                 overtimeHours: 0
             }));
-        
+
         const combined = [...attendance, ...absentRecords];
         return res.status(200).json({ success: true, count: combined.length, data: combined });
     }

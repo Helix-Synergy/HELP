@@ -3,11 +3,18 @@ const mongoose = require('mongoose');
 const PunchSchema = new mongoose.Schema({
     punchIn: { type: Date, required: true },
     punchOut: { type: Date },
-    location: {
+    punchInLocation: {
         lat: { type: Number },
         lng: { type: Number }
     },
-    ipAddress: { type: String },
+    punchOutLocation: {
+        lat: { type: Number },
+        lng: { type: Number }
+    },
+    punchInIP: { type: String },
+    punchOutIP: { type: String },
+    punchInDevice: { type: String },
+    punchOutDevice: { type: String },
     breaks: [{
         startTime: { type: Date },
         endTime: { type: Date }
