@@ -211,12 +211,27 @@ const Attendance = () => {
 
     const getDeviceType = () => {
         const ua = navigator.userAgent;
-        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
-            return "Mobile"; // Tablet
-        }
-        if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+        
+        // 1. Hardware Check: Touch Points (Most reliable for "Desktop Mode" on Mobile)
+        const isTouchDevice = 
+            ('ontouchstart' in window) || 
+            (navigator.maxTouchPoints > 0) || 
+            (navigator.msMaxTouchPoints > 0);
+            
+        // 2. Media Query Check: Pointer coarse (Mobile finger)
+        const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+        // 3. User-Agent Regex (Traditional layer)
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+
+        // 4. Heuristic: Viewport Width (Mobile/Tablet range)
+        const isNarrowScreen = window.innerWidth <= 1024;
+
+        // Enterprise-grade conclusion: If it has hardware touch points + narrow screen, or mobile UA, it's Mobile
+        if (isMobileUA || (isTouchDevice && isNarrowScreen) || (isCoarsePointer && isNarrowScreen)) {
             return "Mobile";
         }
+
         return "Desktop";
     };
 
