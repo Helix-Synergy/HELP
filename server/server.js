@@ -23,7 +23,7 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
@@ -95,7 +95,18 @@ app.use('/api/v1/holidays', require('./routes/holidays'));
 
 // Basic health check
 app.get('/', (req, res) => {
-  res.send('HEMS API is running...');
+  res.send('HEMS API is running... v2 (CORS Debug)');
+});
+
+// Deployment Debug Route
+app.get('/api/v1/debug', (req, res) => {
+  res.json({
+    status: 'online',
+    version: '2.0.1',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV,
+    allowedOrigins
+  });
 });
 
 // Global error handler
