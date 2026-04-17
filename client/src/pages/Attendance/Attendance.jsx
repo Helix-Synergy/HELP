@@ -21,6 +21,16 @@ const Attendance = () => {
     const [weeklyStats, setWeeklyStats] = useState({ actual: 0, target: 40 });
     const [monthlyStats, setMonthlyStats] = useState({ deficit: 0, actual: 0 });
 
+    // Regularization States
+    const [showRegularizeModal, setShowRegularizeModal] = useState(false);
+    const [regularizationRequests, setRegularizationRequests] = useState([]);
+    const [regularizeFormData, setRegularizeFormData] = useState({
+        date: new Date().toISOString().split('T')[0],
+        reason: '',
+        type: 'MISSING_PUNCH',
+        proposedPunches: [{ punchIn: '10:00', punchOut: '19:00' }]
+    });
+
     // Get user from local storage
     const userStr = localStorage.getItem('hems_user');
     const user = userStr ? JSON.parse(userStr) : null;
@@ -40,12 +50,32 @@ const Attendance = () => {
 
     // Initial load & when filters change
     useEffect(() => {
-        if (isAdmin) {
+        if (isAdmin || user?.role === 'MANAGER') {
             fetchAllAttendance();
+            fetchRegularizationRequests();
         } else {
             fetchMyAttendance();
+            fetchMyRegularizations();
         }
     }, [selectedDate, selectedMonth, selectedYear]);
+
+    const fetchRegularizationRequests = async () => {
+        try {
+            const res = await api.get('/regularization');
+            setRegularizationRequests(res.data.data);
+        } catch (err) {
+            console.error('Failed to fetch regularization requests', err);
+        }
+    };
+
+    const fetchMyRegularizations = async () => {
+        try {
+            const res = await api.get('/regularization/me');
+            // You could store these to show status on the dashboard
+        } catch (err) {
+            console.error('Failed to fetch my regularizations', err);
+        }
+    };
 
     const fetchAllAttendance = async () => {
         setIsLoading(true);
@@ -317,7 +347,7 @@ const Attendance = () => {
                     </p>
                 </div>
                 {!isAdmin && (
-                    <button className="btn-secondary">
+                    <button className="btn-secondary" onClick={() => setShowRegularizeModal(true)}>
                         <FileText size={18} /> Regularize Request
                     </button>
                 )}
@@ -732,6 +762,214 @@ const Attendance = () => {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Regularization Request Modal (For Employees) */}
+            <AnimatePresence>
+                {showRegularizeModal && (
+                    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+                        <motion.div 
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                        >
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                <h3 className="font-bold text-lg">Request Regularization</h3>
+                                <button onClick={() => setShowRegularizeModal(false)}><X size={20} /></button>
+                            </div>
+                            <div className="p-6 overflow-y-auto max-h-[70vh]">
+                                <form id="regularizeForm" onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    setIsSubmitting(true);
+                                    try {
+                                        // Format punches to include the date
+                                        const formattedPunches = regularizeFormData.proposedPunches.map(p => ({
+                                            punchIn: new Date(`${regularizeFormData.date}T${p.punchIn}`),
+                                            punchOut: new Date(`${regularizeFormData.date}T${p.punchOut}`)
+                                        }));
+                                        await api.post('/regularization', {
+                                            ...regularizeFormData,
+                                            proposedPunches: formattedPunches
+                                        });
+                                        alert('Request submitted successfully');
+                                        setShowRegularizeModal(false);
+                                    } catch (err) {
+                                        alert('Error: ' + (err.response?.data?.error || err.message));
+                                    } finally {
+                                        setIsSubmitting(false);
+                                    }
+                                }}>
+                                    <div className="space-y-4">
+                                        <div className="form-group">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Date</label>
+                                            <input 
+                                                type="date" 
+                                                required
+                                                className="input-field mt-1" 
+                                                value={regularizeFormData.date} 
+                                                onChange={(e) => setRegularizeFormData({...regularizeFormData, date: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Issue Type</label>
+                                            <select 
+                                                className="input-field mt-1" 
+                                                value={regularizeFormData.type} 
+                                                onChange={(e) => setRegularizeFormData({...regularizeFormData, type: e.target.value})}
+                                            >
+                                                <option value="MISSING_PUNCH">Forgot to Punch Out</option>
+                                                <option value="FORGOT_PUNCH_IN">Forgot to Punch In</option>
+                                                <option value="LATE_ARRIVAL">Late Arrival</option>
+                                                <option value="REGULARIZATION">Full Day Regularization</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Proposed Timing</label>
+                                            {regularizeFormData.type === 'FORGOT_PUNCH_IN' ? (
+                                                <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3">
+                                                    <Clock size={16} className="text-blue-500" />
+                                                    <span className="text-sm font-semibold text-blue-700">Punch In at 10:00 AM</span>
+                                                </div>
+                                            ) : (
+                                                regularizeFormData.proposedPunches.map((p, idx) => (
+                                                    <div key={idx} className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl">
+                                                        <div>
+                                                            <label className="text-[10px] text-gray-400">Punch In</label>
+                                                            <input 
+                                                                type="time" 
+                                                                required
+                                                                className="input-field text-xs py-1" 
+                                                                value={p.punchIn} 
+                                                                onChange={(e) => {
+                                                                    const newPunches = [...regularizeFormData.proposedPunches];
+                                                                    newPunches[idx].punchIn = e.target.value;
+                                                                    setRegularizeFormData({...regularizeFormData, proposedPunches: newPunches});
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] text-gray-400">Punch Out</label>
+                                                            <input 
+                                                                type="time" 
+                                                                required
+                                                                className="input-field text-xs py-1" 
+                                                                value={p.punchOut} 
+                                                                onChange={(e) => {
+                                                                    const newPunches = [...regularizeFormData.proposedPunches];
+                                                                    newPunches[idx].punchOut = e.target.value;
+                                                                    setRegularizeFormData({...regularizeFormData, proposedPunches: newPunches});
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Reason</label>
+                                            <textarea 
+                                                required
+                                                placeholder="Explain why regularization is needed..."
+                                                className="input-field mt-1 min-h-[80px]" 
+                                                value={regularizeFormData.reason} 
+                                                onChange={(e) => setRegularizeFormData({...regularizeFormData, reason: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div className="p-6 bg-gray-50 flex justify-end gap-3">
+                                <button className="btn-secondary" onClick={() => setShowRegularizeModal(false)}>Cancel</button>
+                                <button 
+                                    type="submit"
+                                    form="regularizeForm"
+                                    className="btn-primary" 
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Admin/Manager Approval Section */}
+            {(isAdmin || user?.role === 'MANAGER') && regularizationRequests.length > 0 && (
+                <div className="card mt-6">
+                    <div className="card-header flex justify-between items-center">
+                        <h3 className="font-bold flex items-center gap-2">
+                            <AlertCircle size={18} className="text-warning" />
+                            Pending Regularization Requests
+                        </h3>
+                    </div>
+                    <div className="p-0 overflow-x-auto">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Proposed Time</th>
+                                    <th>Reason</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {regularizationRequests.filter(r => r.status === 'PENDING').map(req => (
+                                    <tr key={req._id}>
+                                        <td>{req.user?.firstName} {req.user?.lastName}</td>
+                                        <td>{new Date(req.date).toLocaleDateString()}</td>
+                                        <td>
+                                            {req.proposedPunches.map((p, i) => (
+                                                <div key={i} className="text-xs">
+                                                    {new Date(p.punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
+                                                    {new Date(p.punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                </div>
+                                            ))}
+                                        </td>
+                                        <td><span className="text-xs italic text-gray-500">"{req.reason}"</span></td>
+                                        <td>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    className="btn-icon-text py-1 px-3 bg-success/10 text-success hover:bg-success/20"
+                                                    onClick={async () => {
+                                                        if (window.confirm('Approve this regularization? Attendance will be updated.')) {
+                                                            try {
+                                                                await api.put(`/regularization/${req._id}/status`, { status: 'APPROVED' });
+                                                                alert('Approved');
+                                                                fetchRegularizationRequests();
+                                                                fetchAllAttendance();
+                                                            } catch (err) { alert(err.message); }
+                                                        }
+                                                    }}
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button 
+                                                    className="btn-icon-text py-1 px-3 bg-error/10 text-error hover:bg-error/20"
+                                                    onClick={async () => {
+                                                        const comment = window.prompt('Reason for rejection:');
+                                                        if (comment !== null) {
+                                                            try {
+                                                                await api.put(`/regularization/${req._id}/status`, { status: 'REJECTED', adminComments: comment });
+                                                                fetchRegularizationRequests();
+                                                            } catch (err) { alert(err.message); }
+                                                        }
+                                                    }}
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </motion.div>
     );
 };

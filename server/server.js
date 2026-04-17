@@ -92,6 +92,7 @@ app.use('/api/v1/dashboard', require('./routes/dashboard'));
 app.use('/api/v1/announcements', require('./routes/announcements'));
 app.use('/api/v1/events', require('./routes/events'));
 app.use('/api/v1/holidays', require('./routes/holidays'));
+app.use('/api/v1/regularization', require('./routes/regularization'));
 
 // Basic health check
 app.get('/', (req, res) => {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Clock, Calendar, CheckCircle, Activity, Briefcase, FileText, Download, Building, Database, UserCheck, UserX, AlertTriangle, Play, Square, Megaphone, CalendarCheck, MapPin, Coffee, X, Plus } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
@@ -462,6 +463,8 @@ const ManagerDashboard = () => {
     });
     const [loading, setLoading] = useState(true);
 
+    const navigate = useNavigate();
+
     const fetchManagerStats = async () => {
         try {
             const res = await api.get('/dashboard/manager-stats');
@@ -501,10 +504,11 @@ const ManagerDashboard = () => {
                     isPositive={stats.attendancePercentage >= 90} 
                 />
                 <StatCard 
-                    title="Pending Leaves" 
+                    title="Pending Requests" 
                     value={String(stats.pendingLeaves)} 
                     icon={<Clock size={20} />} 
-                    isPositive={false} 
+                    isPositive={false}
+                    onClick={() => navigate('/attendance')} 
                 />
                 <StatCard 
                     title="Team Leaves Today" 
@@ -567,6 +571,7 @@ const HRDashboard = () => (
 );
 
 const SuperAdminDashboard = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         totalEmployees: '0',
         presentToday: '0',
@@ -712,7 +717,14 @@ const SuperAdminDashboard = () => {
                 <StatCard title="Total Employees" value={stats.totalEmployees} icon={<Users size={20} />} trend="Active" isPositive={true} />
                 <StatCard title="Present Today" value={stats.presentToday} icon={<UserCheck size={20} />} trend="Punched In" isPositive={true} />
                 <StatCard title="On Leave" value={stats.onLeaveToday} icon={<UserX size={20} />} trend="Approved" isPositive={false} />
-                <StatCard title="Pending Actions" value={stats.pendingItems} icon={<Clock size={20} />} trend="Required" isPositive={false} />
+                <StatCard 
+                    title="Pending Actions" 
+                    value={stats.pendingItems} 
+                    icon={<Clock size={20} />} 
+                    trend="Required" 
+                    isPositive={false} 
+                    onClick={() => navigate('/attendance')}
+                />
             </div>
 
             <div className="dashboard-row">

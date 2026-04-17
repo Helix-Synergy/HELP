@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const LeaveRequest = require('../models/LeaveRequest');
 const Timesheet = require('../models/Timesheet');
+const RegularizationRequest = require('../models/RegularizationRequest');
 const asyncHandler = require('../middleware/async');
 
 // @desc    Get workforce stats for Dashboard
@@ -30,7 +31,9 @@ exports.getSystemStats = asyncHandler(async (req, res, next) => {
         endDate: { $gte: todayStartUTC },
         status: 'APPROVED'
     });
-    const pendingItemsCount = await LeaveRequest.countDocuments({ status: 'PENDING' });
+    const pendingLeaves = await LeaveRequest.countDocuments({ status: 'PENDING' });
+    const pendingRegularizations = await RegularizationRequest.countDocuments({ status: 'PENDING' });
+    const pendingItemsCount = pendingLeaves + pendingRegularizations;
 
     // Activity trend
     const activityTrend = [];
@@ -108,10 +111,15 @@ exports.getManagerStats = asyncHandler(async (req, res, next) => {
     });
 
     // 3. Pending Leaves
-    const pendingLeavesCount = await LeaveRequest.countDocuments({
+    const pendingLeaves = await LeaveRequest.countDocuments({
         user: { $in: teamIds },
         status: 'PENDING'
     });
+    const pendingRegularizations = await RegularizationRequest.countDocuments({
+        user: { $in: teamIds },
+        status: 'PENDING'
+    });
+    const pendingRequestsCount = pendingLeaves + pendingRegularizations;
 
     // 4. Team Leaves Today
     const leavesTodayCount = await LeaveRequest.countDocuments({
@@ -153,7 +161,7 @@ exports.getManagerStats = asyncHandler(async (req, res, next) => {
         success: true,
         data: {
             attendancePercentage,
-            pendingLeaves: pendingLeavesCount,
+            pendingLeaves: pendingRequestsCount,
             leavesToday: leavesTodayCount,
             timesheetsDue: timesheetsDueCount,
             activityData: activityTrend
