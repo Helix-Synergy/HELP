@@ -34,10 +34,14 @@ exports.processPayroll = asyncHandler(async (req, res, next) => {
     const { month, overrides, perfOverrides } = req.body;
     if (!month) return next(new ErrorResponse('Please specify a month (YYYY-MM)', 400));
 
-    const [year, monthNum] = month.split('-');
-    const startDate = new Date(year, monthNum - 1, 1);
-    const endDate = new Date(year, monthNum, 0);
-    const totalDaysInMonth = endDate.getDate();
+    const [year, monthNum] = month.split('-').map(Number);
+    // Salary Cycle: 26th of Previous Month to 25th of Current Month
+    const startDate = new Date(year, monthNum - 2, 26);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(year, monthNum - 1, 25);
+    endDate.setHours(23, 59, 59, 999);
+    
+    const totalDaysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
     const users = await User.find({ status: 'ACTIVE' });
     let count = 0;
@@ -163,10 +167,14 @@ exports.getAttendanceSummary = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse('Please provide month (YYYY-MM)', 400));
     }
 
-    const [year, monthNum] = month.split('-');
-    const startDate = new Date(year, monthNum - 1, 1);
-    const endDate = new Date(year, monthNum, 0);
-    const totalDaysInMonth = endDate.getDate();
+    const [year, monthNum] = month.split('-').map(Number);
+    // Salary Cycle: 26th of Previous Month to 25th of Current Month
+    const startDate = new Date(year, monthNum - 2, 26);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(year, monthNum - 1, 25);
+    endDate.setHours(23, 59, 59, 999);
+    
+    const totalDaysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
     const users = await User.find({ status: 'ACTIVE' }).select('firstName lastName employeeId ctc performanceFactor');
 
