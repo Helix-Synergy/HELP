@@ -8,7 +8,7 @@ const DocumentSchema = new mongoose.Schema({
     },
     documentType: {
         type: String,
-        enum: ['OFFER_LETTER', 'ID_PROOF', 'CERTIFICATE', 'POLICY', 'OTHER'],
+        enum: ['OFFER_LETTER', 'ID_PROOF', 'CERTIFICATE', 'POLICY', 'PASSPORT_PHOTO', 'EXPERIENCE_LETTER', 'PAYSLIP', 'RESUME', 'OTHER'],
         required: true
     },
     title: {

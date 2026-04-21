@@ -187,8 +187,23 @@ exports.getAllAttendance = asyncHandler(async (req, res, next) => {
     let query = {};
     let filterDate = null;
 
-    // If a specific date is provided, use it
-    if (req.query.date) {
+    // If a range is provided
+    if (req.query.startDate && req.query.endDate) {
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        
+        const start = new Date(req.query.startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        const startUTC = new Date(start.getTime() - istOffset);
+
+        const end = new Date(req.query.endDate);
+        end.setUTCHours(0, 0, 0, 0);
+        const endUTC = new Date(end.getTime() - istOffset + (24 * 60 * 60 * 1000));
+
+        query.date = {
+            $gte: startUTC,
+            $lt: endUTC
+        };
+    } else if (req.query.date) {
         // Normalize input string to IST Midnight represented in UTC
         const istOffset = 5.5 * 60 * 60 * 1000;
         const inputDate = new Date(req.query.date);

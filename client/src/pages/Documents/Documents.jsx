@@ -14,6 +14,14 @@ const Documents = () => {
     // Preview state
     const [previewFile, setPreviewFile] = useState({ url: '', name: '', open: false });
 
+    // Upload state
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploadForm, setUploadForm] = useState({
+        file: null,
+        title: '',
+        type: 'OTHER'
+    });
+
     // Auth Check
     const userStr = localStorage.getItem('hems_user');
     const user = userStr ? JSON.parse(userStr) : null;
@@ -37,7 +45,7 @@ const Documents = () => {
         }
     };
 
-    const handleFileUpload = async (e) => {
+    const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -47,10 +55,22 @@ const Documents = () => {
             return;
         }
 
+        setUploadForm({
+            ...uploadForm,
+            file: file,
+            title: file.name.split('.')[0] // Default title to filename without extension
+        });
+        setShowUploadModal(true);
+    };
+
+    const handleUploadSubmit = async (e) => {
+        e.preventDefault();
+        if (!uploadForm.file) return;
+
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('documentType', 'POLICY'); // Can be expanded to dropdown
-        formData.append('title', file.name);
+        formData.append('file', uploadForm.file);
+        formData.append('documentType', uploadForm.type);
+        formData.append('title', uploadForm.title);
 
         setIsLoading(true);
         try {
@@ -58,13 +78,15 @@ const Documents = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             alert('Document uploaded successfully!');
-            fetchDocuments(); // Refresh tracking
+            setShowUploadModal(false);
+            setUploadForm({ file: null, title: '', type: 'OTHER' });
+            fetchDocuments();
         } catch (err) {
             console.error('Upload error', err);
             alert('Failed to upload document: ' + (err.response?.data?.error || err.message));
         } finally {
             setIsLoading(false);
-            if (fileInputRef.current) fileInputRef.current.value = ''; // clear input
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -117,7 +139,7 @@ const Documents = () => {
                     type="file"
                     ref={fileInputRef}
                     style={{ display: 'none' }}
-                    onChange={handleFileUpload}
+                    onChange={handleFileSelect}
                     accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
                 />
 
@@ -165,7 +187,14 @@ const Documents = () => {
                                         </button>
                                     </div>
                                 </td>
-                                <td><span className="file-badge">{getFileExtension(file.title)}</span></td>
+                                <td>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <span className="file-type-text" style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-primary)' }}>
+                                            {file.documentType?.replace('_', ' ')}
+                                        </span>
+                                        <span className="file-badge" style={{ alignSelf: 'flex-start' }}>{getFileExtension(file.title)}</span>
+                                    </div>
+                                </td>
                                 {isManager && (
                                     <td>{file.user ? `${file.user.firstName} ${file.user.lastName}` : 'System'}</td>
                                 )}
@@ -209,6 +238,72 @@ const Documents = () => {
                 fileUrl={previewFile.url}
                 fileName={previewFile.name}
             />
+
+            {/* Upload Document Modal */}
+            <AnimatePresence>
+                {showUploadModal && (
+                    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+                        <motion.div 
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                        >
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                <h3 className="font-bold text-lg">Upload New Document</h3>
+                                <button onClick={() => setShowUploadModal(false)}><XCircle size={20} /></button>
+                            </div>
+                            <form onSubmit={handleUploadSubmit}>
+                                <div className="p-6 space-y-4">
+                                    <div className="form-group">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Document Name/Title</label>
+                                        <input 
+                                            type="text" 
+                                            className="input-field mt-1"
+                                            required
+                                            value={uploadForm.title}
+                                            onChange={(e) => setUploadForm({...uploadForm, title: e.target.value})}
+                                            placeholder="e.g. My ID Card"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Document Category</label>
+                                        <select 
+                                            className="input-field mt-1"
+                                            required
+                                            value={uploadForm.type}
+                                            onChange={(e) => setUploadForm({...uploadForm, type: e.target.value})}
+                                        >
+                                            <option value="ID_PROOF">Identity Proof</option>
+                                            <option value="PASSPORT_PHOTO">Passport Photo</option>
+                                            <option value="OFFER_LETTER">Offer Letter</option>
+                                            <option value="EXPERIENCE_LETTER">Experience Letter</option>
+                                            <option value="PAYSLIP">Payslip</option>
+                                            <option value="CERTIFICATE">Certificate</option>
+                                            <option value="RESUME">Resume/CV</option>
+                                            <option value="POLICY">Policy Document</option>
+                                            <option value="OTHER">Other</option>
+                                        </select>
+                                    </div>
+                                    <div className="p-3 bg-blue-50 rounded-lg flex items-center gap-3">
+                                        <FileText size={20} className="text-blue-500" />
+                                        <div className="overflow-hidden">
+                                            <p className="text-sm font-medium truncate">{uploadForm.file?.name}</p>
+                                            <p className="text-[10px] text-blue-400">Ready to upload</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6 bg-gray-50 flex justify-end gap-3">
+                                    <button type="button" className="btn-secondary" onClick={() => setShowUploadModal(false)}>Cancel</button>
+                                    <button type="submit" className="btn-primary" disabled={isLoading}>
+                                        {isLoading ? 'Uploading...' : 'Confirm Upload'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

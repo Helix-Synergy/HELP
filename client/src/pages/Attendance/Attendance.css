@@ -374,6 +374,19 @@
     gap: 8px;
 }
 
+.range-filter {
+    background: var(--bg-primary);
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    gap: 12px !important;
+}
+
+.range-filter .filter-select {
+    border: none;
+    padding: 4px 0;
+}
+
 .filter-label {
     font-size: 14px;
     font-weight: 500;
@@ -609,4 +622,58 @@
 
 .device-indicator-mini.desktop {
     color: #0d9488; /* Zoho Teal */
+}
+
+/* No Data Found Styling */
+.no-data-found-container {
+    width: 100%;
+    padding: 80px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    grid-column: 1 / -1;
+}
+
+.no-data-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 48px;
+    border-radius: var(--radius-xl);
+    text-align: center;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-lg);
+    animation: attendanceFadeIn 0.5s ease-out;
+}
+
+.no-data-icon {
+    color: var(--text-tertiary);
+    opacity: 0.5;
+    margin-bottom: 8px;
+}
+
+.no-data-card h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.no-data-card p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+    font-size: 15px;
+}
+
+.no-data-card .btn-secondary {
+    margin-top: 8px;
+}
+
+@keyframes attendanceFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }

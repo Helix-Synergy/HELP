@@ -39,6 +39,8 @@ const Attendance = () => {
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // today YYYY-MM-DD
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
 
     const months = [
         "January", "February", "March", "April", "May", "June",
@@ -57,7 +59,7 @@ const Attendance = () => {
             fetchMyAttendance();
             fetchMyRegularizations();
         }
-    }, [selectedDate, selectedMonth, selectedYear]);
+    }, [selectedDate, selectedMonth, selectedYear, startDate, endDate]);
 
     const fetchRegularizationRequests = async () => {
         try {
@@ -83,7 +85,9 @@ const Attendance = () => {
             // If a specific date is selected, use date param (shows all employees including absent)
             // Otherwise use month/year params
             let url = '/attendance/all';
-            if (selectedDate) {
+            if (startDate && endDate) {
+                url += `?startDate=${startDate}&endDate=${endDate}`;
+            } else if (selectedDate) {
                 url += `?date=${selectedDate}`;
             } else {
                 url += `?month=${selectedMonth}&year=${selectedYear}`;
@@ -358,48 +362,45 @@ const Attendance = () => {
                 <div className="attendance-filters">
                     <div className="filter-group">
                         <Calendar size={18} className="text-secondary" />
-                        <span className="filter-label">Date:</span>
+                        <span className="filter-label">Quick Date:</span>
                         <input 
                             type="date"
                             className="filter-select"
                             value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
+                            onChange={(e) => {
+                                setSelectedDate(e.target.value);
+                                setStartDate("");
+                                setEndDate("");
+                            }}
                         />
                     </div>
-                    <div className="filter-group">
-                        <span className="filter-label">Month:</span>
-                        <select 
+                    
+                    <div className="filter-group range-filter">
+                        <span className="filter-label">From:</span>
+                        <input 
+                            type="date"
                             className="filter-select"
-                            value={selectedMonth}
+                            value={startDate}
                             onChange={(e) => {
-                                setSelectedMonth(e.target.value);
-                                setSelectedDate(""); // Clear specific date if month is changed
+                                setStartDate(e.target.value);
+                                setSelectedDate("");
                             }}
-                        >
-                            <option value="">Select Month</option>
-                            {months.map((m, i) => (
-                                <option key={i} value={i + 1}>{m}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="filter-group">
-                        <span className="filter-label">Year:</span>
-                        <select 
+                        />
+                        <span className="filter-label">To:</span>
+                        <input 
+                            type="date"
                             className="filter-select"
-                            value={selectedYear}
+                            value={endDate}
                             onChange={(e) => {
-                                setSelectedYear(e.target.value);
-                                setSelectedDate(""); // Clear specific date if year is changed
+                                setEndDate(e.target.value);
+                                setSelectedDate("");
                             }}
-                        >
-                            {years.map(y => (
-                                <option key={y} value={y}>{y}</option>
-                            ))}
-                        </select>
+                        />
                     </div>
+
                     <div style={{ marginLeft: 'auto' }}>
                         <button className="btn-secondary" onClick={() => isAdmin ? fetchAllAttendance() : fetchMyAttendance()}>
-                            <Filter size={16} /> Filter
+                            <Filter size={16} /> Apply Filters
                         </button>
                     </div>
                 </div>
@@ -653,8 +654,27 @@ const Attendance = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-                                <p>No records found for the selected period.</p>
+                            <div className="no-data-found-container">
+                                <div className="no-data-card">
+                                    <AlertCircle size={48} className="no-data-icon" />
+                                    <h3>No Records Found</h3>
+                                    <p>
+                                        {startDate && endDate 
+                                            ? `No attendance data found between ${new Date(startDate).toLocaleDateString()} and ${new Date(endDate).toLocaleDateString()}.`
+                                            : selectedDate 
+                                                ? `No attendance data found for ${new Date(selectedDate).toLocaleDateString()}.`
+                                                : `No attendance data found for ${months[selectedMonth-1]}, ${selectedYear}.`}
+                                    </p>
+                                    <button className="btn-secondary" onClick={() => {
+                                        setSelectedDate(new Date().toISOString().split('T')[0]);
+                                        setStartDate("");
+                                        setEndDate("");
+                                        setSelectedMonth(new Date().getMonth() + 1);
+                                        setSelectedYear(new Date().getFullYear());
+                                    }}>
+                                        Reset Filters
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
