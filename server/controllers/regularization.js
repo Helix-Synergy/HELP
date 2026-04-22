@@ -11,8 +11,12 @@ const Timesheet = require('../models/Timesheet');
 exports.applyRegularization = asyncHandler(async (req, res, next) => {
     req.body.user = req.user.id;
 
-    const filterDateStart = new Date(new Date(req.body.date).setHours(0,0,0,0));
-    const filterDateEnd = new Date(new Date(req.body.date).setHours(23,59,59,999));
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const inputDate = new Date(req.body.date);
+    inputDate.setUTCHours(0, 0, 0, 0);
+
+    const filterDateStart = new Date(inputDate.getTime() - istOffset);
+    const filterDateEnd = new Date(filterDateStart.getTime() + 24 * 60 * 60 * 1000);
 
     // Check if Timesheet is submitted for this particular date (Only for Punch Out or Full Day)
     if (['MISSING_PUNCH', 'REGULARIZATION'].includes(req.body.type)) {
@@ -110,11 +114,17 @@ exports.updateRegularizationStatus = asyncHandler(async (req, res, next) => {
 
     if (status === 'APPROVED') {
         // Find existing attendance or create new one
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const inputDate = new Date(request.date);
+        inputDate.setUTCHours(0, 0, 0, 0);
+        const queryStart = new Date(inputDate.getTime() - istOffset);
+        const queryEnd = new Date(queryStart.getTime() + 24 * 60 * 60 * 1000);
+
         let attendance = await Attendance.findOne({
             user: request.user,
             date: {
-                $gte: new Date(new Date(request.date).setHours(0,0,0,0)),
-                $lt: new Date(new Date(request.date).setHours(23,59,59,999))
+                $gte: queryStart,
+                $lt: queryEnd
             }
         });
 
