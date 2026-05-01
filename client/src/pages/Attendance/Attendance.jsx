@@ -28,7 +28,10 @@ const Attendance = () => {
         date: new Date().toISOString().split('T')[0],
         reason: '',
         type: 'MISSING_PUNCH',
-        proposedPunches: [{ punchIn: '10:00', punchOut: '19:00' }]
+        proposedPunches: [{ 
+            punchIn: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), 
+            punchOut: '19:00' 
+        }]
     });
 
     // Get user from local storage
@@ -805,7 +808,9 @@ const Attendance = () => {
                                         // Format punches to include the date
                                         const formattedPunches = regularizeFormData.proposedPunches.map(p => ({
                                             punchIn: new Date(`${regularizeFormData.date}T${p.punchIn}`),
-                                            punchOut: new Date(`${regularizeFormData.date}T${p.punchOut}`)
+                                            punchOut: regularizeFormData.type === 'FORGOT_PUNCH_IN' 
+                                                ? new Date(`${regularizeFormData.date}T${p.punchIn}`) // same as in for now, server handles it
+                                                : new Date(`${regularizeFormData.date}T${p.punchOut}`)
                                         }));
                                         await api.post('/regularization', {
                                             ...regularizeFormData,
@@ -845,29 +850,27 @@ const Attendance = () => {
                                         </div>
 
                                         <div className="space-y-3">
-                                            <label className="text-xs font-bold text-gray-500 uppercase">Proposed Timing</label>
-                                            {regularizeFormData.type === 'FORGOT_PUNCH_IN' ? (
-                                                <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3">
-                                                    <Clock size={16} className="text-blue-500" />
-                                                    <span className="text-sm font-semibold text-blue-700">Punch In at 10:00 AM</span>
-                                                </div>
-                                            ) : (
-                                                regularizeFormData.proposedPunches.map((p, idx) => (
-                                                    <div key={idx} className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl">
-                                                        <div>
-                                                            <label className="text-[10px] text-gray-400">Punch In</label>
-                                                            <input 
-                                                                type="time" 
-                                                                required
-                                                                className="input-field text-xs py-1" 
-                                                                value={p.punchIn} 
-                                                                onChange={(e) => {
-                                                                    const newPunches = [...regularizeFormData.proposedPunches];
-                                                                    newPunches[idx].punchIn = e.target.value;
-                                                                    setRegularizeFormData({...regularizeFormData, proposedPunches: newPunches});
-                                                                }}
-                                                            />
-                                                        </div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">
+                                                {regularizeFormData.type === 'FORGOT_PUNCH_IN' ? 'Proposed Punch In Time' : 'Proposed Timing'}
+                                            </label>
+                                            
+                                            {regularizeFormData.proposedPunches.map((p, idx) => (
+                                                <div key={idx} className={`grid ${regularizeFormData.type === 'FORGOT_PUNCH_IN' ? 'grid-cols-1' : 'grid-cols-2'} gap-3 p-3 bg-gray-50 rounded-xl`}>
+                                                    <div>
+                                                        <label className="text-[10px] text-gray-400">Punch In</label>
+                                                        <input 
+                                                            type="time" 
+                                                            required
+                                                            className="input-field text-xs py-1" 
+                                                            value={p.punchIn} 
+                                                            onChange={(e) => {
+                                                                const newPunches = [...regularizeFormData.proposedPunches];
+                                                                newPunches[idx].punchIn = e.target.value;
+                                                                setRegularizeFormData({...regularizeFormData, proposedPunches: newPunches});
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    {regularizeFormData.type !== 'FORGOT_PUNCH_IN' && (
                                                         <div>
                                                             <label className="text-[10px] text-gray-400">Punch Out</label>
                                                             <input 
@@ -882,9 +885,9 @@ const Attendance = () => {
                                                                 }}
                                                             />
                                                         </div>
-                                                    </div>
-                                                ))
-                                            )}
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
 
                                         <div className="form-group">

@@ -130,9 +130,14 @@ exports.updateRegularizationStatus = asyncHandler(async (req, res, next) => {
 
         let updatedPunches;
         if (request.type === 'FORGOT_PUNCH_IN') {
-            // For Forgot Punch In, we only set a punchIn at 10:00 AM
-            const punchInTime = new Date(request.date);
-            punchInTime.setHours(10, 0, 0, 0);
+            // Use the proposed punchIn time if available, else fallback to 10:00 AM IST
+            let punchInTime;
+            if (request.proposedPunches && request.proposedPunches.length > 0) {
+                punchInTime = new Date(request.proposedPunches[0].punchIn);
+            } else {
+                punchInTime = new Date(request.date);
+                punchInTime.setHours(10, 0, 0, 0);
+            }
             
             updatedPunches = [{
                 punchIn: punchInTime,
