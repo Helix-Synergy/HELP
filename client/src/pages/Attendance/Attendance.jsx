@@ -559,7 +559,14 @@ const Attendance = () => {
                                                     )}
                                                     <span className="emp-card-name" style={{ display: 'block' }}>{record.user?.firstName} {record.user?.lastName}</span>
                                                 </div>
-                                                <span className="emp-card-id">{record.user?.employeeId}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="emp-card-id">{record.user?.employeeId}</span>
+                                                    {record.user?.designation && (
+                                                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-bold uppercase">
+                                                            {record.user.designation}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <span className={`status-badge status-${record.status?.toLowerCase()}`}>
                                                 {record.status}
@@ -942,7 +949,10 @@ const Attendance = () => {
                             <tbody>
                                 {regularizationRequests.filter(r => r.status === 'PENDING').map(req => (
                                     <tr key={req._id}>
-                                        <td>{req.user?.firstName} {req.user?.lastName}</td>
+                                        <td>
+                                            <div className="font-bold">{req.user?.firstName} {req.user?.lastName}</div>
+                                            <div className="text-[10px] text-gray-400 uppercase font-bold">{req.user?.designation || 'Team Member'}</div>
+                                        </td>
                                         <td>{new Date(req.date).toLocaleDateString()}</td>
                                         <td>
                                             {req.proposedPunches.map((p, i) => (

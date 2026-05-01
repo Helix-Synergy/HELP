@@ -37,6 +37,7 @@ const Directory = () => {
                 id: u._id,
                 name: `${u.firstName} ${u.lastName}`,
                 role: u.role.replace('_', ' '),
+                designation: u.designation || u.role.replace('_', ' '),
                 dept: u.departmentId?.name || 'General',
                 email: u.email,
                 phone: u.contactDetails?.phone || 'N/A',
@@ -87,7 +88,8 @@ const Directory = () => {
     const filteredEmployees = employees.filter(emp =>
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.dept.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.role.toLowerCase().includes(searchTerm.toLowerCase())
+        emp.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.designation?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleEditClick = (emp) => {
@@ -222,7 +224,7 @@ const Directory = () => {
                                         )}
                                     </div>
                                     <h3 className="emp-name">{emp.name}</h3>
-                                    <p className="emp-role">{emp.role}</p>
+                                    <p className="emp-role">{emp.designation}</p>
                                     <span className="dept-pill">{emp.dept}</span>
                                 </div>
                                 <div className="emp-card-footer">
@@ -247,7 +249,7 @@ const Directory = () => {
                             <thead>
                                 <tr>
                                     <th>Employee</th>
-                                    <th>Role</th>
+                                    <th>Designation</th>
                                     <th>Department</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -271,7 +273,7 @@ const Directory = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{emp.role}</td>
+                                        <td>{emp.designation}</td>
                                         <td><span className="dept-pill">{emp.dept}</span></td>
                                         <td>
                                             <span className={`status-badge ${emp.status === 'Active' ? 'bg-success' : 'bg-warning'}`}>

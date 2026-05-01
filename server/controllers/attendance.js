@@ -243,7 +243,7 @@ exports.getAllAttendance = asyncHandler(async (req, res, next) => {
     const attendance = await Attendance.find(query)
         .populate({
             path: 'user',
-            select: 'firstName lastName employeeId'
+            select: 'firstName lastName employeeId designation'
         })
         .sort('-date');
 

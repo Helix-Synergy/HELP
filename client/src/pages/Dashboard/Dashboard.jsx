@@ -249,7 +249,12 @@ const EmployeeDashboard = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="dashboard-content-layer">
             <div className="page-header">
                 <h1>Welcome Back, {name}</h1>
-                <p>Monitor your performance and time tracking center.</p>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="px-3 py-0.5 bg-accent-light text-accent-primary rounded-full text-xs font-bold uppercase tracking-wider">
+                        {userData?.designation || 'Team Member'}
+                    </span>
+                    <p className="text-secondary">Monitor your performance and time tracking center.</p>
+                </div>
             </div>
             
             <div className="stats-grid employee-dashboard-grid">

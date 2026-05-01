@@ -76,12 +76,12 @@ exports.getRegularizations = asyncHandler(async (req, res, next) => {
     let query;
 
     if (req.user.role === 'SUPER_ADMIN' || req.user.role === 'HR_ADMIN') {
-        query = RegularizationRequest.find().populate('user', 'firstName lastName employeeId');
+        query = RegularizationRequest.find().populate('user', 'firstName lastName employeeId designation');
     } else if (req.user.role === 'MANAGER') {
         // Get requests for users reporting to this manager
         const teamMembers = await User.find({ managerId: req.user.id }).select('_id');
         const teamIds = teamMembers.map(m => m._id);
-        query = RegularizationRequest.find({ user: { $in: teamIds } }).populate('user', 'firstName lastName employeeId');
+        query = RegularizationRequest.find({ user: { $in: teamIds } }).populate('user', 'firstName lastName employeeId designation');
     }
 
     const requests = await query.sort('-createdAt');
