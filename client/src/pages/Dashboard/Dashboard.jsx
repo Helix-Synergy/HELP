@@ -75,13 +75,9 @@ const EmployeeDashboard = () => {
             let initialTimePassed = 0;
 
             if (records && records.length > 0) {
+                // First pass: calculate today's live time
                 records.forEach(rec => {
                     const recDate = new Date(rec.date);
-                    // Monthly calculation
-                    if (recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear()) {
-                        monthHrs += rec.totalHours || 0;
-                    }
-                    // Today calculation
                     if (recDate.toDateString() === todayStr) {
                         todayHrs = rec.totalHours || 0;
                         const lastPunch = rec.punches[rec.punches.length - 1];
@@ -89,15 +85,12 @@ const EmployeeDashboard = () => {
                         if (lastPunch && !lastPunch.punchOut) {
                             checkedIn = true;
                             
-                            // Check for active break
                             const activeBreak = lastPunch.breaks?.find(b => !b.endTime);
                             if (activeBreak) {
                                 setIsOnBreak(true);
                             } else {
                                 setIsOnBreak(false);
-                                const activeSeconds = Math.floor((new Date() - new Date(lastPunch.punchIn)) / 1000);
-                                
-                                // Subtract all COMPLETED breaks in this session from the active timer
+                                const activeSeconds = Math.floor((now - new Date(lastPunch.punchIn)) / 1000);
                                 let breakSeconds = 0;
                                 if (lastPunch.breaks) {
                                     lastPunch.breaks.forEach(b => {
@@ -108,6 +101,18 @@ const EmployeeDashboard = () => {
                                 }
                                 initialTimePassed += (activeSeconds - breakSeconds);
                             }
+                        }
+                    }
+                });
+
+                // Second pass: calculate monthly hours including live time
+                records.forEach(rec => {
+                    const recDate = new Date(rec.date);
+                    if (recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear()) {
+                        if (recDate.toDateString() === todayStr) {
+                            monthHrs += (initialTimePassed / 3600);
+                        } else {
+                            monthHrs += rec.totalHours || 0;
                         }
                     }
                 });
@@ -126,9 +131,16 @@ const EmployeeDashboard = () => {
                 date.setDate(monday.getDate() + index);
                 const dateStr = date.toDateString();
                 
-                // Find matching record
                 const rec = records?.find(r => new Date(r.date).toDateString() === dateStr);
-                return { name, present: rec ? (rec.totalHours || 0) : 0 };
+                
+                let presentHours = 0;
+                if (dateStr === todayStr) {
+                    presentHours = initialTimePassed / 3600;
+                } else if (rec) {
+                    presentHours = rec.totalHours || 0;
+                }
+                
+                return { name, present: presentHours };
             });
             
             setChartData(cData);
@@ -469,7 +481,10 @@ const EmployeeDashboard = () => {
                             <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
-                                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
+                                    formatter={(value) => [`${Math.floor(value)}h ${Math.round((value - Math.floor(value)) * 60)}m`, 'Duration']}
+                                />
                                 <Bar dataKey="present" fill="var(--accent-primary)" radius={[4, 4, 0, 0]} barSize={40} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -565,7 +580,10 @@ const ManagerDashboard = () => {
                                     </defs>
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
+                                        formatter={(value) => [`${Math.floor(value)}h ${Math.round((value - Math.floor(value)) * 60)}m`, 'Average Hours']}
+                                    />
                                     <Area type="monotone" dataKey="present" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorTeam)" />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -770,7 +788,10 @@ const SuperAdminDashboard = () => {
                                 </defs>
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} dy={10} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
-                                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
+                                    formatter={(value) => [`${Math.floor(value)}h ${Math.round((value - Math.floor(value)) * 60)}m`, 'Total Hours']}
+                                />
                                 <Area type="monotone" dataKey="present" stroke="var(--accent-primary)" fillOpacity={1} fill="url(#colorTraffic)" strokeWidth={3} />
                             </AreaChart>
                         </ResponsiveContainer>
