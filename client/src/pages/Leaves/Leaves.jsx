@@ -31,6 +31,9 @@ const Leaves = () => {
     const [showQuotaModal, setShowQuotaModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [editQuotas, setEditQuotas] = useState([]);
+    
+    // Calendar Modal State
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -284,7 +287,9 @@ const Leaves = () => {
                                     <div className="text-secondary p-3 italic">No upcoming holidays.</div>
                                 )}
                             </div>
-                            <button className="btn-secondary w-100 mt-4"><CalendarOff size={16} /> View Full Calendar</button>
+                            <button className="btn-secondary w-100 mt-4" onClick={() => setShowCalendarModal(true)}>
+                                <Calendar size={16} /> View Full Calendar
+                            </button>
                         </div>
                     </div>
 
@@ -423,6 +428,56 @@ const Leaves = () => {
                                 >
                                     {isLoading ? 'Saving...' : 'Save Changes'}
                                 </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Full Calendar Modal */}
+            <AnimatePresence>
+                {showCalendarModal && (
+                    <div className="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4 backdrop-blur-sm">
+                        <motion.div 
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                        >
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-accent-light text-accent-primary rounded-lg">
+                                        <Calendar size={20} />
+                                    </div>
+                                    <h3 className="font-bold text-lg">Organization Holidays</h3>
+                                </div>
+                                <button onClick={() => setShowCalendarModal(false)} className="text-tertiary hover:text-primary"><X size={20} /></button>
+                            </div>
+                            <div className="p-6 overflow-y-auto custom-scrollbar">
+                                <div className="space-y-4">
+                                    {holidays.map((h, idx) => (
+                                        <div key={idx} className="flex items-center p-4 rounded-xl border border-gray-100 hover:border-accent-light hover:shadow-md transition-all bg-white">
+                                            <div className="flex flex-col items-center justify-center bg-blue-50 text-accent-primary rounded-lg p-3 min-w-[80px]">
+                                                <span className="text-xs font-bold uppercase">{new Date(h.date).toLocaleDateString('en-US', { month: 'short' })}</span>
+                                                <span className="text-xl font-extrabold">{new Date(h.date).getDate()}</span>
+                                            </div>
+                                            <div className="ml-4">
+                                                <h4 className="font-bold text-gray-800 text-lg">{h.name}</h4>
+                                                <p className="text-sm text-gray-500 mt-1">{h.type || 'Organization'} Holiday</p>
+                                                {h.description && <p className="text-xs text-gray-400 mt-1">{h.description}</p>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {holidays.length === 0 && (
+                                        <div className="text-center p-8 text-gray-400">
+                                            <CalendarOff size={48} className="mx-auto mb-4 opacity-50" />
+                                            <p>No holidays scheduled for this year.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                                <button className="btn-primary px-8" onClick={() => setShowCalendarModal(false)}>Close</button>
                             </div>
                         </motion.div>
                     </div>
