@@ -15,7 +15,17 @@ exports.getMyTimesheets = asyncHandler(async (req, res, next) => {
 // @route   GET /api/v1/timesheets
 // @access  Private (Manager/Admin)
 exports.getTimesheets = asyncHandler(async (req, res, next) => {
-    const timesheets = await Timesheet.find()
+    let query = {};
+    
+    // Add date filtering if provided
+    if (req.query.date) {
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const dateObj = new Date(req.query.date);
+        const queryDate = new Date(dateObj.getTime() - istOffset);
+        query.date = queryDate;
+    }
+
+    const timesheets = await Timesheet.find(query)
         .populate('user', 'firstName lastName email')
         .sort('-date');
     res.status(200).json({ success: true, count: timesheets.length, data: timesheets });

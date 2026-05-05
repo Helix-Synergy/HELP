@@ -178,3 +178,50 @@ exports.getAllLeaveBalances = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({ success: true, count: formattedData.length, data: formattedData });
 });
+// @desc    Update leave quota (Admin only)
+// @route   PUT /api/v1/leaves/quota/:userId
+// @access  Private (Admin)
+exports.updateLeaveQuota = asyncHandler(async (req, res, next) => {
+    const { quotas } = req.body; // Array of { leaveType, totalAllocated }
+    const userId = req.params.userId;
+    const year = new Date().getFullYear();
+
+    let balance = await LeaveBalance.findOne({ user: userId, year });
+
+    if (!balance) {
+        // Initialize with base defaults
+        const baseBalances = [
+            { leaveType: 'CASUAL_LEAVE', totalAllocated: 10, used: 0 },
+            { leaveType: 'SICK_LEAVE', totalAllocated: 12, used: 0 },
+            { leaveType: 'EARNED_LEAVE', totalAllocated: 15, used: 0 }
+        ];
+        
+        // Override with provided quotas
+        quotas.forEach(q => {
+            const index = baseBalances.findIndex(b => b.leaveType === q.leaveType);
+            if (index !== -1) {
+                baseBalances[index].totalAllocated = q.totalAllocated;
+            } else {
+                baseBalances.push({ leaveType: q.leaveType, totalAllocated: q.totalAllocated, used: 0 });
+            }
+        });
+
+        balance = await LeaveBalance.create({
+            user: userId,
+            year,
+            balances: baseBalances
+        });
+    } else {
+        quotas.forEach(q => {
+            const balanceItem = balance.balances.find(b => b.leaveType === q.leaveType);
+            if (balanceItem) {
+                balanceItem.totalAllocated = q.totalAllocated;
+            } else {
+                balance.balances.push({ leaveType: q.leaveType, totalAllocated: q.totalAllocated, used: 0 });
+            }
+        });
+        await balance.save();
+    }
+
+    res.status(200).json({ success: true, data: balance });
+});

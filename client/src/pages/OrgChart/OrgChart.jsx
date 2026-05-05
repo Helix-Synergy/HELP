@@ -46,6 +46,14 @@ const OrgChart = () => {
         return rootNodes;
     };
 
+    // Helper for backend served files vs external
+    const getFullUrl = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const backendBase = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.split('/api/v1')[0] : 'http://localhost:5000';
+        return `${backendBase}/${url.replace(/\\/g, '/')}`;
+    };
+
     const OrgNode = ({ node }) => {
         return (
             <div className="org-node-container flex flex-col items-center">
@@ -53,9 +61,17 @@ const OrgChart = () => {
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
                     className="org-card bg-white border border-gray-200 shadow-sm rounded-xl p-4 w-64 flex flex-col items-center text-center relative z-10 hover:shadow-md transition-shadow hover:border-blue-300"
                 >
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold mb-3 shadow-inner">
-                        {node.firstName[0]}{node.lastName[0]}
-                    </div>
+                    {node.profilePicture ? (
+                        <img 
+                            src={getFullUrl(node.profilePicture)} 
+                            alt={node.firstName} 
+                            className="w-16 h-16 rounded-full object-cover mb-3 shadow-md border-2 border-white ring-2 ring-blue-50"
+                        />
+                    ) : (
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold mb-3 shadow-inner">
+                            {node.firstName[0]}{node.lastName[0]}
+                        </div>
+                    )}
                     <h3 className="text-gray-900 font-bold mb-0.5">{node.firstName} {node.lastName}</h3>
                     <p className="text-sm font-medium text-blue-600 mb-3">{node.designation || 'Employee'}</p>
 

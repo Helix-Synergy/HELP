@@ -115,15 +115,22 @@ const EmployeeDashboard = () => {
             setIsCheckedIn(checkedIn);
             setTimePassed(initialTimePassed);
 
-            let cData = [{ name: 'Mon', present: 0 }, { name: 'Tue', present: 0 }, { name: 'Wed', present: 0 }, { name: 'Thu', present: 0 }, { name: 'Fri', present: 0 }];
-            if (records && records.length > 0) {
-                const daysMap = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri' };
-                records.slice(0, 5).forEach(rec => {
-                    const recDate = new Date(rec.date);
-                    const matchingItem = cData.find(c => c.name === daysMap[recDate.getDay()]);
-                    if (matchingItem) matchingItem.present = rec.totalHours || 0;
-                });
-            }
+            // Dynamically build the current week chart (Mon-Fri)
+            const startOfWeek = new Date();
+            const dayNum = startOfWeek.getDay(); // 0 is Sun, 1 is Mon...
+            const diff = startOfWeek.getDate() - dayNum + (dayNum === 0 ? -6 : 1); // Adjust to Monday
+            const monday = new Date(startOfWeek.setDate(diff));
+            
+            let cData = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((name, index) => {
+                const date = new Date(monday);
+                date.setDate(monday.getDate() + index);
+                const dateStr = date.toDateString();
+                
+                // Find matching record
+                const rec = records?.find(r => new Date(r.date).toDateString() === dateStr);
+                return { name, present: rec ? (rec.totalHours || 0) : 0 };
+            });
+            
             setChartData(cData);
 
             let balance = 0;
@@ -149,7 +156,7 @@ const EmployeeDashboard = () => {
             setStats(prev => ({
                 ...prev,
                 leaveBalance: `${balance} Days`,
-                todayHours: `${todayHrs.toFixed(1)}h`,
+                todayHours: `${(initialTimePassed / 3600).toFixed(2)}h`,
                 monthlyHours: `${monthHrs.toFixed(1)}h`,
                 upcomingHoliday: nextHoli,
                 upcomingEvent: nextEvent,
@@ -176,7 +183,21 @@ const EmployeeDashboard = () => {
     useEffect(() => {
         let interval;
         if (isCheckedIn && !isOnBreak) {
-            interval = setInterval(() => setTimePassed(prev => prev + 1), 1000);
+            interval = setInterval(() => {
+                setTimePassed(prev => {
+                    const newTime = prev + 1;
+                    // Update todayHours in stats for real-time dashboard sync
+                    setStats(s => ({ ...s, todayHours: `${(newTime / 3600).toFixed(2)}h` }));
+                    
+                    // Also update the chart for "Today" if it's currently Mon-Fri
+                    const todayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
+                    setChartData(prevData => prevData.map(d => 
+                        d.name === todayName ? { ...d, present: newTime / 3600 } : d
+                    ));
+                    
+                    return newTime;
+                });
+            }, 1000);
         }
         return () => clearInterval(interval);
     }, [isCheckedIn, isOnBreak]);
@@ -260,6 +281,7 @@ const EmployeeDashboard = () => {
             <div className="stats-grid employee-dashboard-grid">
                 {/* Attendance Hub Tile */}
                 <div className="card punch-hub-tile">
+
                     <div className="hub-header">
                         <span className="hub-date">{currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
                         <span className="hub-clock">{currentDate.toLocaleTimeString('en-US', { hour12: true })}</span>

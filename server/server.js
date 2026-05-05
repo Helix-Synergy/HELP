@@ -64,6 +64,8 @@ app.use('/api', limiter);
 const path = require('path');
 app.use('/uploads', (req, res, next) => {
   res.set('Content-Disposition', 'inline');
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('Content-Security-Policy');
   next();
 }, express.static(path.join(__dirname, 'uploads')));
 

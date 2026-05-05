@@ -14,6 +14,8 @@ import Attendance from './pages/Attendance/Attendance';
 import Leaves from './pages/Leaves/Leaves';
 import ApplyLeave from './pages/ApplyLeave/ApplyLeave';
 import Timesheets from './pages/Timesheets/Timesheets';
+import PerformanceFeed from './pages/Timesheets/PerformanceFeed';
+import DayLogDetail from './pages/Timesheets/DayLogDetail';
 import Documents from './pages/Documents/Documents';
 import Payroll from './pages/Payroll/Payroll';
 import Onboarding from './pages/Onboarding/Onboarding';
@@ -72,6 +74,8 @@ function App() {
             <Route path="leaves" element={<Leaves />} />
             <Route path="leaves/apply" element={<ApplyLeave />} />
             <Route path="/timesheets" element={<Timesheets />} />
+            <Route path="/timesheets/feed" element={<PerformanceFeed />} />
+            <Route path="/timesheets/day" element={<DayLogDetail />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/payroll" element={<Payroll />} />
             <Route path="/onboarding" element={<Onboarding />} />

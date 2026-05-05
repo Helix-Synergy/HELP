@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Plus, Clock, FileText, CheckCircle, XCircle, AlertCircle, CalendarOff, Check, X } from 'lucide-react';
+import { Calendar, Plus, Clock, FileText, CheckCircle, XCircle, AlertCircle, CalendarOff, Check, X, Edit2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import api from '../../api/axios';
 import './Leaves.css';
@@ -26,6 +26,11 @@ const Leaves = () => {
     const isManager = ['SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'].includes(user?.role);
     const isAdmin = user?.role === 'SUPER_ADMIN';
     const [isLoading, setIsLoading] = useState(false);
+
+    // Quota Editing States
+    const [showQuotaModal, setShowQuotaModal] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
+    const [editQuotas, setEditQuotas] = useState([]);
 
     useEffect(() => {
         fetchData();
@@ -97,6 +102,26 @@ const Leaves = () => {
             fetchData(); // Refresh the manager list and own list
         } catch (err) {
             alert('Failed to update status: ' + (err.response?.data?.error || err.message));
+        }
+    };
+
+    const handleUpdateQuota = async () => {
+        setIsLoading(true);
+        try {
+            const payload = {
+                quotas: editQuotas.map(q => ({
+                    leaveType: q.leaveType,
+                    totalAllocated: parseInt(q.totalAllocated)
+                }))
+            };
+            await api.put(`/leaves/quota/${editingUser._id}`, payload);
+            alert('Leave quotas updated successfully');
+            setShowQuotaModal(false);
+            fetchData();
+        } catch (err) {
+            alert('Failed to update quotas: ' + (err.response?.data?.error || err.message));
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -173,6 +198,17 @@ const Leaves = () => {
                                             <span className="text-secondary">{item.user.employeeId}</span>
                                         </div>
                                     </div>
+                                    <button 
+                                        className="icon-btn-small" 
+                                        title="Edit Quota"
+                                        onClick={() => {
+                                            setEditingUser(item.user);
+                                            setEditQuotas(item.balances.map(b => ({ ...b })));
+                                            setShowQuotaModal(true);
+                                        }}
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
                                 </div>
                                 <div className="emp-balance-stats mt-3">
                                     {item.balances.map((b, idx) => (
@@ -336,6 +372,62 @@ const Leaves = () => {
                     </div>
                 </>
             )}
+
+            {/* Quota Edit Modal */}
+            <AnimatePresence>
+                {showQuotaModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                        <motion.div
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                        >
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                <h3 className="font-bold text-lg">Update Leave Quotas</h3>
+                                <button onClick={() => setShowQuotaModal(false)}><X size={20} /></button>
+                            </div>
+                            <div className="p-6">
+                                <div className="mb-4">
+                                    <p className="text-sm text-secondary">
+                                        Editing quotas for <strong>{editingUser?.firstName} {editingUser?.lastName}</strong> ({editingUser?.employeeId})
+                                    </p>
+                                </div>
+                                <div className="space-y-4">
+                                    {editQuotas.map((q, idx) => (
+                                        <div key={idx} className="form-group">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">{q.leaveType.replace('_', ' ')} Quota</label>
+                                            <div className="d-flex align-items-center gap-2 mt-1">
+                                                <input 
+                                                    type="number" 
+                                                    className="input-field" 
+                                                    value={q.totalAllocated}
+                                                    onChange={(e) => {
+                                                        const newQuotas = [...editQuotas];
+                                                        newQuotas[idx].totalAllocated = e.target.value;
+                                                        setEditQuotas(newQuotas);
+                                                    }}
+                                                />
+                                                <span className="text-secondary text-sm">Used: {q.used}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="p-6 bg-gray-50 flex justify-end gap-3">
+                                <button className="btn-secondary" onClick={() => setShowQuotaModal(false)}>Cancel</button>
+                                <button 
+                                    className="btn-primary" 
+                                    disabled={isLoading}
+                                    onClick={handleUpdateQuota}
+                                >
+                                    {isLoading ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
         </motion.div>
     );

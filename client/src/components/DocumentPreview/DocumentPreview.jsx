@@ -30,8 +30,9 @@ const DocumentPreview = ({ isOpen, onClose, fileUrl, fileName }) => {
         fullUrl.toLowerCase().includes('image/')
     );
 
-    // PDF viewer - Use Google Docs Viewer for better in-browser experience across environments
-    const pdfViewerUrl = isPdf ? `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true` : fullUrl;
+    // PDF viewer - Use native browser viewer for reliability on localhost
+    // Fallback to Google Docs Viewer ONLY if it's a public URL and we want to ensure consistent mobile experience
+    const pdfViewerUrl = fullUrl; 
 
     return (
         <AnimatePresence>
@@ -93,14 +94,12 @@ const DocumentPreview = ({ isOpen, onClose, fileUrl, fileName }) => {
                                 className="max-w-full max-h-full object-contain rounded shadow-lg bg-white"
                             />
                         ) : isPdf ? (
-                            /* Use Google Docs Viewer for maximum cross-origin reliability */
-                            <iframe 
-                                src={pdfViewerUrl} 
-                                title={fileName}
+                            /* Use native PDF viewer for local reliability */
+                            <embed 
+                                src={`${fullUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                                type="application/pdf"
                                 className="w-full h-full rounded border-0 shadow-lg bg-white"
-                            >
-                                <p>Your browser does not support iframes. <a href={fullUrl}>Download the PDF</a> instead.</p>
-                            </iframe>
+                            />
                         ) : (
                             <div className="text-center p-12 bg-white rounded-2xl shadow-sm border border-gray-100 max-w-md">
                                 <AlertCircle size={48} className="text-warning mx-auto mb-4" />
