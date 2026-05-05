@@ -210,7 +210,7 @@ const Payroll = () => {
                                 <thead>
                                     <tr>
                                         <th>Employee</th>
-                                        <th>Total Days</th>
+                                        <th>Working Days</th>
                                         <th>Present Days</th>
                                         <th>Performance %</th>
                                         <th>LOP Days</th>

@@ -41,7 +41,12 @@ exports.processPayroll = asyncHandler(async (req, res, next) => {
     const endDate = new Date(year, monthNum - 1, 25);
     endDate.setHours(23, 59, 59, 999);
     
-    const totalDaysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const totalDaysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1; // Inclusive
+
+    let workingDays = 0;
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        if (d.getDay() !== 0 && d.getDay() !== 6) workingDays++;
+    }
 
     const users = await User.find({ status: 'ACTIVE' });
     let count = 0;
@@ -71,15 +76,11 @@ exports.processPayroll = asyncHandler(async (req, res, next) => {
                 if (r.status === 'HALF_DAY') presentCount += 0.5;
                 else presentCount += 1;
             });
-            // Add weekends (assume 8 days) as paid if needed? 
-            // In the user's rule: effective_ctc = (monthly_ctc / total_working_days) * attendance_days
-            // This implies attendance_days includes holidays/weekends if they are paid.
-            // I'll assume 8 weekend days are paid, so presentCount += 8.
-            presentCount += 8;
-            if (presentCount > totalDaysInMonth) presentCount = totalDaysInMonth;
+            // Do not arbitrarily add weekends. Base salary solely on Working Days.
+            if (presentCount > workingDays) presentCount = workingDays;
         }
 
-        const effectiveCTC = (monthlyCTC / totalDaysInMonth) * presentCount;
+        const effectiveCTC = (monthlyCTC / workingDays) * presentCount;
 
         // Rules Mapping
         const isWFO = u.workMode === 'WFO';
@@ -145,9 +146,9 @@ exports.processPayroll = asyncHandler(async (req, res, next) => {
             totalDeductions,
             netPay,
             attendance: {
-                totalDays: totalDaysInMonth,
+                totalDays: workingDays,
                 presentDays: presentCount,
-                lopDays: totalDaysInMonth - presentCount,
+                lopDays: Math.max(0, workingDays - presentCount),
                 performanceFactor: performanceFactor
             },
             status: 'PROCESSED'
@@ -174,7 +175,12 @@ exports.getAttendanceSummary = asyncHandler(async (req, res, next) => {
     const endDate = new Date(year, monthNum - 1, 25);
     endDate.setHours(23, 59, 59, 999);
     
-    const totalDaysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const totalDaysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    let workingDays = 0;
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        if (d.getDay() !== 0 && d.getDay() !== 6) workingDays++;
+    }
 
     const users = await User.find({ status: 'ACTIVE' }).select('firstName lastName employeeId ctc performanceFactor');
 
@@ -192,16 +198,16 @@ exports.getAttendanceSummary = asyncHandler(async (req, res, next) => {
             else presentCount += 1;
         });
 
-        // Assume 8 weekend days
-        const lopDays = Math.max(0, totalDaysInMonth - presentCount - 8);
+        // Use exact working days for LOP calculation
+        const lopDays = Math.max(0, workingDays - presentCount);
 
         return {
             userId: u._id,
             name: `${u.firstName} ${u.lastName}`,
             employeeId: u.employeeId,
-            totalDays: totalDaysInMonth,
+            totalDays: workingDays,
             presentDays: presentCount,
-            lopDays: Math.max(0, lopDays),
+            lopDays: lopDays,
             performanceFactor: (u.performanceFactor !== undefined && u.performanceFactor !== null) ? u.performanceFactor : 100,
             hasProcessed: !!(await Payroll.exists({ userId: u._id, month }))
         };
