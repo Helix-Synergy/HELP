@@ -40,7 +40,7 @@ const EmployeeDashboard = () => {
     });
     const [isCheckedIn, setIsCheckedIn] = useState(false);
     const [isOnBreak, setIsOnBreak] = useState(false);
-    const [timePassed, setTimePassed] = useState(0); 
+    const [timePassed, setTimePassed] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [chartData, setChartData] = useState([]);
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -75,22 +75,29 @@ const EmployeeDashboard = () => {
             let initialTimePassed = 0;
 
             if (records && records.length > 0) {
-                // First pass: calculate today's live time
                 records.forEach(rec => {
                     const recDate = new Date(rec.date);
+                    // Monthly calculation
+                    if (recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear()) {
+                        monthHrs += rec.totalHours || 0;
+                    }
+                    // Today calculation
                     if (recDate.toDateString() === todayStr) {
                         todayHrs = rec.totalHours || 0;
                         const lastPunch = rec.punches[rec.punches.length - 1];
                         initialTimePassed = Math.floor(todayHrs * 3600);
                         if (lastPunch && !lastPunch.punchOut) {
                             checkedIn = true;
-                            
+
+                            // Check for active break
                             const activeBreak = lastPunch.breaks?.find(b => !b.endTime);
                             if (activeBreak) {
                                 setIsOnBreak(true);
                             } else {
                                 setIsOnBreak(false);
-                                const activeSeconds = Math.floor((now - new Date(lastPunch.punchIn)) / 1000);
+                                const activeSeconds = Math.floor((new Date() - new Date(lastPunch.punchIn)) / 1000);
+
+                                // Subtract all COMPLETED breaks in this session from the active timer
                                 let breakSeconds = 0;
                                 if (lastPunch.breaks) {
                                     lastPunch.breaks.forEach(b => {
@@ -104,18 +111,6 @@ const EmployeeDashboard = () => {
                         }
                     }
                 });
-
-                // Second pass: calculate monthly hours including live time
-                records.forEach(rec => {
-                    const recDate = new Date(rec.date);
-                    if (recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear()) {
-                        if (recDate.toDateString() === todayStr) {
-                            monthHrs += (initialTimePassed / 3600);
-                        } else {
-                            monthHrs += rec.totalHours || 0;
-                        }
-                    }
-                });
             }
             setIsCheckedIn(checkedIn);
             setTimePassed(initialTimePassed);
@@ -125,24 +120,17 @@ const EmployeeDashboard = () => {
             const dayNum = startOfWeek.getDay(); // 0 is Sun, 1 is Mon...
             const diff = startOfWeek.getDate() - dayNum + (dayNum === 0 ? -6 : 1); // Adjust to Monday
             const monday = new Date(startOfWeek.setDate(diff));
-            
+
             let cData = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((name, index) => {
                 const date = new Date(monday);
                 date.setDate(monday.getDate() + index);
                 const dateStr = date.toDateString();
-                
+
+                // Find matching record
                 const rec = records?.find(r => new Date(r.date).toDateString() === dateStr);
-                
-                let presentHours = 0;
-                if (dateStr === todayStr) {
-                    presentHours = initialTimePassed / 3600;
-                } else if (rec) {
-                    presentHours = rec.totalHours || 0;
-                }
-                
-                return { name, present: presentHours };
+                return { name, present: rec ? (rec.totalHours || 0) : 0 };
             });
-            
+
             setChartData(cData);
 
             let balance = 0;
@@ -153,10 +141,10 @@ const EmployeeDashboard = () => {
             }
 
             // Dashboard feeds
-            const nextHoli = holiRes.data.data && holiRes.data.data[0] 
-                ? `${new Date(holiRes.data.data[0].date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (${holiRes.data.data[0].name})` 
+            const nextHoli = holiRes.data.data && holiRes.data.data[0]
+                ? `${new Date(holiRes.data.data[0].date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (${holiRes.data.data[0].name})`
                 : 'No Upcoming Holidays';
-            
+
             const latestAnn = annRes.data.data && annRes.data.data[0]
                 ? annRes.data.data[0].title
                 : 'No New Announcements';
@@ -200,13 +188,13 @@ const EmployeeDashboard = () => {
                     const newTime = prev + 1;
                     // Update todayHours in stats for real-time dashboard sync
                     setStats(s => ({ ...s, todayHours: `${(newTime / 3600).toFixed(2)}h` }));
-                    
+
                     // Also update the chart for "Today" if it's currently Mon-Fri
                     const todayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
-                    setChartData(prevData => prevData.map(d => 
+                    setChartData(prevData => prevData.map(d =>
                         d.name === todayName ? { ...d, present: newTime / 3600 } : d
                     ));
-                    
+
                     return newTime;
                 });
             }, 1000);
@@ -289,7 +277,7 @@ const EmployeeDashboard = () => {
                     <p className="text-secondary">Monitor your performance and time tracking center.</p>
                 </div>
             </div>
-            
+
             <div className="stats-grid employee-dashboard-grid">
                 {/* Attendance Hub Tile */}
                 <div className="card punch-hub-tile">
@@ -306,7 +294,7 @@ const EmployeeDashboard = () => {
                         </div>
 
                         <div className="hub-action">
-                            <button 
+                            <button
                                 className={`circular-punch-btn ${isCheckedIn ? 'punch-out' : 'punch-in'}`}
                                 onClick={handlePunch}
                                 disabled={isLoading}
@@ -316,7 +304,7 @@ const EmployeeDashboard = () => {
                                 </div>
                                 <span className="punch-text">{isCheckedIn ? 'PUNCH OUT' : 'PUNCH IN'}</span>
                                 <svg className="progress-ring" width="160" height="160">
-                                    <circle className="progress-ring__circle" stroke="currentColor" strokeWidth="6" fill="transparent" r="74" cx="80" cy="80"/>
+                                    <circle className="progress-ring__circle" stroke="currentColor" strokeWidth="6" fill="transparent" r="74" cx="80" cy="80" />
                                 </svg>
                             </button>
                         </div>
@@ -325,9 +313,9 @@ const EmployeeDashboard = () => {
                             <div className="location-pill">
                                 <MapPin size={12} /> Office (IP: 192.168.1.1)
                             </div>
-                            <button 
-                                className={`break-link ${isOnBreak ? 'text-accent-primary animate-pulse' : ''}`} 
-                                onClick={handleBreakToggle} 
+                            <button
+                                className={`break-link ${isOnBreak ? 'text-accent-primary animate-pulse' : ''}`}
+                                onClick={handleBreakToggle}
                                 disabled={!isCheckedIn || isLoading}
                             >
                                 <Coffee size={14} /> {isOnBreak ? 'End Break' : 'Start Break'}
@@ -337,20 +325,20 @@ const EmployeeDashboard = () => {
                 </div>
 
                 {/* Monthly Hours Tile */}
-                <StatCard 
-                    title="Monthly Working Hours" 
-                    value={stats.monthlyHours} 
-                    icon={<Activity size={24} />} 
-                    trend="Completed" 
-                    isPositive={true} 
+                <StatCard
+                    title="Monthly Working Hours"
+                    value={stats.monthlyHours}
+                    icon={<Activity size={24} />}
+                    trend="Completed"
+                    isPositive={true}
                     className="large-stat-card"
                 />
 
                 {/* Announcements Tile */}
-                <StatCard 
-                    title="Announcements" 
-                    value={stats.announcements} 
-                    icon={<Megaphone size={24} />} 
+                <StatCard
+                    title="Announcements"
+                    value={stats.announcements}
+                    icon={<Megaphone size={24} />}
                     trend="New Alert"
                     isPositive={true}
                     className="large-stat-card"
@@ -363,23 +351,23 @@ const EmployeeDashboard = () => {
                 />
 
                 {/* Leave Balance Tile */}
-                <StatCard 
-                    title="Leave Balance" 
-                    value={stats.leaveBalance} 
-                    icon={<Calendar size={24} />} 
+                <StatCard
+                    title="Leave Balance"
+                    value={stats.leaveBalance}
+                    icon={<Calendar size={24} />}
                     trend="Available"
                     isPositive={true}
                     className="large-stat-card"
                 />
 
                 {/* Upcoming Events Tile */}
-                <StatCard 
-                    title="Upcoming Events" 
-                    value={stats.upcomingEvent} 
-                    icon={<CalendarCheck size={24} />} 
+                <StatCard
+                    title="Upcoming Events"
+                    value={stats.upcomingEvent}
+                    icon={<CalendarCheck size={24} />}
                     trend="Next Event"
                     isPositive={true}
-                    className="large-stat-card" 
+                    className="large-stat-card"
                     onClick={() => {
                         if (rawFeed.event) {
                             setViewDetail({ type: 'EVENT', data: rawFeed.event });
@@ -389,10 +377,10 @@ const EmployeeDashboard = () => {
                 />
 
                 {/* Upcoming Holiday Tile */}
-                <StatCard 
-                    title="Upcoming Holiday" 
-                    value={stats.upcomingHoliday} 
-                    icon={<Briefcase size={24} />} 
+                <StatCard
+                    title="Upcoming Holiday"
+                    value={stats.upcomingHoliday}
+                    icon={<Briefcase size={24} />}
                     trend="Next Break"
                     className="large-stat-card"
                     onClick={() => {
@@ -408,7 +396,7 @@ const EmployeeDashboard = () => {
             <AnimatePresence>
                 {showViewModal && viewDetail && (
                     <div className="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -481,10 +469,7 @@ const EmployeeDashboard = () => {
                             <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
-                                <Tooltip 
-                                    contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
-                                    formatter={(value) => [`${Math.floor(value)}h ${Math.round((value - Math.floor(value)) * 60)}m`, 'Duration']}
-                                />
+                                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
                                 <Bar dataKey="present" fill="var(--accent-primary)" radius={[4, 4, 0, 0]} barSize={40} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -539,28 +524,28 @@ const ManagerDashboard = () => {
                 <p>Monitor your team's performance and pending tasks.</p>
             </div>
             <div className="stats-grid">
-                <StatCard 
-                    title="Team Attendance" 
-                    value={`${stats.attendancePercentage}%`} 
-                    icon={<Users size={20} />} 
-                    isPositive={stats.attendancePercentage >= 90} 
+                <StatCard
+                    title="Team Attendance"
+                    value={`${stats.attendancePercentage}%`}
+                    icon={<Users size={20} />}
+                    isPositive={stats.attendancePercentage >= 90}
                 />
-                <StatCard 
-                    title="Pending Requests" 
-                    value={String(stats.pendingLeaves)} 
-                    icon={<Clock size={20} />} 
+                <StatCard
+                    title="Pending Requests"
+                    value={String(stats.pendingLeaves)}
+                    icon={<Clock size={20} />}
                     isPositive={false}
-                    onClick={() => navigate('/attendance')} 
+                    onClick={() => navigate('/attendance')}
                 />
-                <StatCard 
-                    title="Team Leaves Today" 
-                    value={String(stats.leavesToday)} 
-                    icon={<Calendar size={20} />} 
+                <StatCard
+                    title="Team Leaves Today"
+                    value={String(stats.leavesToday)}
+                    icon={<Calendar size={20} />}
                 />
-                <StatCard 
-                    title="Timesheets Due" 
-                    value={String(stats.timesheetsDue)} 
-                    icon={<CheckCircle size={20} />} 
+                <StatCard
+                    title="Timesheets Due"
+                    value={String(stats.timesheetsDue)}
+                    icon={<CheckCircle size={20} />}
                 />
             </div>
             <div className="dashboard-row">
@@ -582,7 +567,7 @@ const ManagerDashboard = () => {
                                     <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
                                     <Tooltip 
                                         contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
-                                        formatter={(value) => [`${Math.floor(value)}h ${Math.round((value - Math.floor(value)) * 60)}m`, 'Average Hours']}
+                                        formatter={(value) => [value, 'Employees Present']}
                                     />
                                     <Area type="monotone" dataKey="present" stroke="var(--accent-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorTeam)" />
                                 </AreaChart>
@@ -762,12 +747,12 @@ const SuperAdminDashboard = () => {
                 <StatCard title="Total Employees" value={stats.totalEmployees} icon={<Users size={20} />} trend="Active" isPositive={true} />
                 <StatCard title="Present Today" value={stats.presentToday} icon={<UserCheck size={20} />} trend="Punched In" isPositive={true} />
                 <StatCard title="On Leave" value={stats.onLeaveToday} icon={<UserX size={20} />} trend="Approved" isPositive={false} />
-                <StatCard 
-                    title="Pending Actions" 
-                    value={stats.pendingItems} 
-                    icon={<Clock size={20} />} 
-                    trend="Required" 
-                    isPositive={false} 
+                <StatCard
+                    title="Pending Actions"
+                    value={stats.pendingItems}
+                    icon={<Clock size={20} />}
+                    trend="Required"
+                    isPositive={false}
                     onClick={() => navigate('/attendance')}
                 />
             </div>
@@ -790,7 +775,7 @@ const SuperAdminDashboard = () => {
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)' }} />
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
-                                    formatter={(value) => [`${Math.floor(value)}h ${Math.round((value - Math.floor(value)) * 60)}m`, 'Total Hours']}
+                                    formatter={(value) => [value, 'Employees Present']}
                                 />
                                 <Area type="monotone" dataKey="present" stroke="var(--accent-primary)" fillOpacity={1} fill="url(#colorTraffic)" strokeWidth={3} />
                             </AreaChart>
@@ -803,7 +788,7 @@ const SuperAdminDashboard = () => {
             <AnimatePresence>
                 {showAnnModal && (
                     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -817,29 +802,29 @@ const SuperAdminDashboard = () => {
                                 <div className="space-y-4">
                                     <div className="form-group">
                                         <label className="text-xs font-bold text-gray-500 uppercase">Title</label>
-                                        <input 
-                                            type="text" 
-                                            className="input-field mt-1" 
+                                        <input
+                                            type="text"
+                                            className="input-field mt-1"
                                             placeholder="e.g. Office Holiday Notice"
                                             value={annForm.title}
-                                            onChange={(e) => setAnnForm({...annForm, title: e.target.value})}
+                                            onChange={(e) => setAnnForm({ ...annForm, title: e.target.value })}
                                         />
                                     </div>
                                     <div className="form-group">
                                         <label className="text-xs font-bold text-gray-500 uppercase">Content</label>
-                                        <textarea 
-                                            className="input-field mt-1 min-h-[100px]" 
+                                        <textarea
+                                            className="input-field mt-1 min-h-[100px]"
                                             placeholder="Details of the announcement..."
                                             value={annForm.content}
-                                            onChange={(e) => setAnnForm({...annForm, content: e.target.value})}
+                                            onChange={(e) => setAnnForm({ ...annForm, content: e.target.value })}
                                         />
                                     </div>
                                     <div className="form-group">
                                         <label className="text-xs font-bold text-gray-500 uppercase">Priority</label>
-                                        <select 
+                                        <select
                                             className="input-field mt-1"
                                             value={annForm.priority}
-                                            onChange={(e) => setAnnForm({...annForm, priority: e.target.value})}
+                                            onChange={(e) => setAnnForm({ ...annForm, priority: e.target.value })}
                                         >
                                             <option value="LOW">Low</option>
                                             <option value="MEDIUM">Medium</option>
@@ -863,7 +848,7 @@ const SuperAdminDashboard = () => {
             <AnimatePresence>
                 {showEventModal && (
                     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -877,51 +862,51 @@ const SuperAdminDashboard = () => {
                                 <div className="space-y-4">
                                     <div className="form-group">
                                         <label className="text-xs font-bold text-gray-500 uppercase">Event Title</label>
-                                        <input 
-                                            type="text" 
-                                            className="input-field mt-1" 
+                                        <input
+                                            type="text"
+                                            className="input-field mt-1"
                                             placeholder="e.g. Monthly Townhall"
                                             value={eventForm.title}
-                                            onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
+                                            onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="form-group">
                                             <label className="text-xs font-bold text-gray-500 uppercase">Event Date</label>
-                                            <input 
-                                                type="date" 
+                                            <input
+                                                type="date"
                                                 className="input-field mt-1"
                                                 value={eventForm.date}
-                                                onChange={(e) => setEventForm({...eventForm, date: e.target.value})}
+                                                onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
                                             />
                                         </div>
                                         <div className="form-group">
                                             <label className="text-xs font-bold text-gray-500 uppercase">Start Time</label>
-                                            <input 
-                                                type="time" 
+                                            <input
+                                                type="time"
                                                 className="input-field mt-1"
                                                 value={eventForm.time}
-                                                onChange={(e) => setEventForm({...eventForm, time: e.target.value})}
+                                                onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
                                             />
                                         </div>
                                     </div>
                                     <div className="form-group">
                                         <label className="text-xs font-bold text-gray-500 uppercase">Location</label>
-                                        <input 
-                                            type="text" 
-                                            className="input-field mt-1" 
+                                        <input
+                                            type="text"
+                                            className="input-field mt-1"
                                             placeholder="e.g. Conference Room A / Zoom"
                                             value={eventForm.location}
-                                            onChange={(e) => setEventForm({...eventForm, location: e.target.value})}
+                                            onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
                                         />
                                     </div>
                                     <div className="form-group">
                                         <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
-                                        <textarea 
-                                            className="input-field mt-1 min-h-[80px]" 
+                                        <textarea
+                                            className="input-field mt-1 min-h-[80px]"
                                             placeholder="Event highlights..."
                                             value={eventForm.description}
-                                            onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
+                                            onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
                                         />
                                     </div>
                                 </div>
@@ -941,7 +926,7 @@ const SuperAdminDashboard = () => {
             <AnimatePresence>
                 {showHoliModal && (
                     <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -965,7 +950,7 @@ const SuperAdminDashboard = () => {
                                                             <Calendar size={10} /> {new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         </div>
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         className="p-2 text-danger hover:bg-red-50 rounded-lg transition-colors"
                                                         onClick={() => handleDeleteHoli(h._id)}
                                                     >
@@ -985,29 +970,29 @@ const SuperAdminDashboard = () => {
                                     <div className="space-y-4">
                                         <div className="form-group">
                                             <label className="text-xs font-bold text-gray-500 uppercase">Holiday Name</label>
-                                            <input 
-                                                type="text" 
-                                                className="input-field mt-1" 
+                                            <input
+                                                type="text"
+                                                className="input-field mt-1"
                                                 placeholder="e.g. Independence Day"
                                                 value={holiForm.name}
-                                                onChange={(e) => setHoliForm({...holiForm, name: e.target.value})}
+                                                onChange={(e) => setHoliForm({ ...holiForm, name: e.target.value })}
                                             />
                                         </div>
                                         <div className="form-group">
                                             <label className="text-xs font-bold text-gray-500 uppercase">Date</label>
-                                            <input 
-                                                type="date" 
+                                            <input
+                                                type="date"
                                                 className="input-field mt-1"
                                                 value={holiForm.date}
-                                                onChange={(e) => setHoliForm({...holiForm, date: e.target.value})}
+                                                onChange={(e) => setHoliForm({ ...holiForm, date: e.target.value })}
                                             />
                                         </div>
                                         <div className="form-group">
                                             <label className="text-xs font-bold text-gray-500 uppercase">Type</label>
-                                            <select 
+                                            <select
                                                 className="input-field mt-1"
                                                 value={holiForm.type}
-                                                onChange={(e) => setHoliForm({...holiForm, type: e.target.value})}
+                                                onChange={(e) => setHoliForm({ ...holiForm, type: e.target.value })}
                                             >
                                                 <option value="NATIONAL">National Holiday</option>
                                                 <option value="REGIONAL">Regional Holiday</option>
@@ -1016,16 +1001,16 @@ const SuperAdminDashboard = () => {
                                         </div>
                                         <div className="form-group">
                                             <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
-                                            <textarea 
-                                                className="input-field mt-1 min-h-[60px]" 
+                                            <textarea
+                                                className="input-field mt-1 min-h-[60px]"
                                                 placeholder="Quick description..."
                                                 value={holiForm.description}
-                                                onChange={(e) => setHoliForm({...holiForm, description: e.target.value})}
+                                                onChange={(e) => setHoliForm({ ...holiForm, description: e.target.value })}
                                             />
                                         </div>
-                                        <button 
-                                            className="btn-primary w-full py-3" 
-                                            disabled={isSubmitting} 
+                                        <button
+                                            className="btn-primary w-full py-3"
+                                            disabled={isSubmitting}
                                             onClick={handleCreateHoli}
                                         >
                                             {isSubmitting ? 'Saving...' : 'Confirm & Add'}
