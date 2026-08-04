@@ -22,28 +22,34 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-
+            
             echo "=================================="
             echo "Starting HELP Backend Deployment"
             echo "=================================="
-
+            
             cd /home/ubuntu/HELP
-
+            
+            echo "ROOT:"
+            pwd
+            ls -la
+            
             echo "Pulling latest code..."
             git pull origin main
-
-            echo "Moving to server folder..."
+            
+            echo "Changing to server..."
             cd server
-
+            
+            echo "SERVER:"
+            pwd
+            ls -la
+            
             echo "Installing dependencies..."
             npm install
-
+            
             echo "Restarting PM2..."
             pm2 restart help-backend --update-env
-
+            
             echo "Saving PM2..."
             pm2 save
-
-            echo "=================================="
-            echo "HELP Backend deployed successfully!"
-            echo "=================================="
+            
+            echo "Deployment completed successfully!"
