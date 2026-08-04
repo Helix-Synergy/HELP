@@ -15,7 +15,7 @@ const AuthLayout = () => {
                     transition={{ duration: 0.8 }}
                 >
                     <div className="logo-container">
-                        <img src={logo} alt="Helix Synergy Corp Logo" className="auth-logo" />
+                        <img src={logo} alt="Octacrest Corporate Pvt Logo" className="auth-logo" />
                     </div>
                     <h2>Enterprise People Management,<br />Simplified.</h2>
                     <p>Streamline your HR workflows, track attendance, and empower employees with a beautiful, fast interface.</p>

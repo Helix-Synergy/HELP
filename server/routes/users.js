@@ -256,4 +256,43 @@ router.put('/:id', protect, authorize('SUPER_ADMIN', 'HR_ADMIN', 'MANAGER'), asy
     }
 });
 
+// @desc    Delete user
+// @route   DELETE /api/v1/users/:id
+// @access  Private/SUPER_ADMIN/HR_ADMIN
+router.delete('/:id', protect, authorize('SUPER_ADMIN', 'HR_ADMIN'), async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+        await user.deleteOne();
+        res.status(200).json({ success: true, data: {} });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// @desc    Admin reset user password
+// @route   PUT /api/v1/users/:id/reset-password
+// @access  Private/SUPER_ADMIN/HR_ADMIN
+router.put('/:id/reset-password', protect, authorize('SUPER_ADMIN', 'HR_ADMIN'), async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+        
+        if (!req.body.password) {
+            return res.status(400).json({ success: false, error: 'Please provide a new password' });
+        }
+
+        user.password = req.body.password;
+        await user.save();
+
+        res.status(200).json({ success: true, message: 'Password reset successful' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 module.exports = router;

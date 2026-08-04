@@ -26,6 +26,17 @@ const CourseSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    externalProvider: {
+        type: String,
+        enum: ['INTERNAL', 'UDEMY'],
+        default: 'INTERNAL'
+    },
+    externalId: {
+        type: String
+    },
+    courseUrl: {
+        type: String
+    },
     mandatory: {
         type: Boolean,
         default: false

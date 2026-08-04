@@ -16,6 +16,24 @@ const EnrollmentSchema = new mongoose.Schema({
         enum: ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'],
         default: 'NOT_STARTED'
     },
+    assignmentType: {
+        type: String,
+        enum: ['SELF', 'ADMIN_ASSIGNED'],
+        default: 'SELF'
+    },
+    assignedBy: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User'
+    },
+    dueDate: {
+        type: Date
+    },
+    certificateUrl: {
+        type: String
+    },
+    certificateUploadDate: {
+        type: Date
+    },
     progressPercent: {
         type: Number,
         default: 0

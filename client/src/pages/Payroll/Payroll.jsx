@@ -552,7 +552,7 @@ const Payroll = () => {
                         <div className="payslip-template">
                             <div className="payslip-header">
                                 <img src={logo} alt="Logo" className="company-logo" onError={(e) => e.target.style.display='none'} />
-                                <div className="company-name">HELIX SYNERGY CORP PVT LTD</div>
+                                <div className="company-name">OCTACREST CORPORATE PVT LTD</div>
                                 <div className="company-address">
                                     Mahaveer Radiance, Opp Madhapur Police Station<br />
                                     Madhapur, Hyderabad - 500081

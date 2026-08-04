@@ -69,15 +69,15 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         <motion.aside
             className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
             animate={{
-                width: isCollapsed ? 80 : 260,
+                width: isCollapsed ? 80 : 280,
                 x: typeof window !== 'undefined' && window.innerWidth <= 768 ? (isMobileOpen ? 0 : -280) : 0
             }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
             <div className="sidebar-header">
-                <div className="sidebar-logo">
+                <div className="sidebar-logo" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     <img src={logo} alt="Logo" className="sidebar-logo-img" />
-                    {!isCollapsed && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ whiteSpace: 'nowrap' }}>Helix Synergy</motion.span>}
+                    {!isCollapsed && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Octacrest Corporate Pvt</motion.span>}
                 </div>
                 <button className="collapse-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
                     {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}

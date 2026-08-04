@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Filter, Plus, Grid as GridIcon, List as ListIcon, MoreVertical, 
-    Mail, Phone, X, CheckCircle, Key, Copy, ExternalLink, ShieldCheck 
+    Mail, Phone, X, CheckCircle, Key, Copy, ExternalLink, ShieldCheck, Trash2 
 } from 'lucide-react';
 import api from '../../api/axios';
 import './Directory.css';
@@ -12,6 +12,11 @@ const Directory = () => {
     const [viewMode, setViewMode] = useState('grid');
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
+
+    const currentUserStr = localStorage.getItem('hems_user');
+    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'HR_ADMIN';
+
     const [employees, setEmployees] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,6 +33,18 @@ const Directory = () => {
     useEffect(() => {
         fetchEmployees();
     }, []);
+
+    const handleDelete = async (id, name) => {
+        if (window.confirm(`Are you sure you want to delete employee ${name}?`)) {
+            try {
+                await api.delete(`/users/${id}`);
+                fetchEmployees();
+            } catch (err) {
+                alert('Failed to delete employee: ' + (err.response?.data?.error || err.message));
+            }
+        }
+        setOpenMenuId(null);
+    };
 
     const fetchEmployees = async () => {
         try {
@@ -194,6 +211,14 @@ const Directory = () => {
                                                     >
                                                         Edit
                                                     </button>
+                                                    {isAdmin && (
+                                                        <button 
+                                                            className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                                            onClick={(e) => { e.stopPropagation(); handleDelete(emp.id, emp.name); }}
+                                                        >
+                                                            <Trash2 size={16} /> Delete
+                                                        </button>
+                                                    )}
                                                     {emp.onboardingStatus === 'NOT_JOINED' && (
                                                         <button 
                                                             className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-600 flex items-center gap-2"
@@ -305,6 +330,14 @@ const Directory = () => {
                                                         >
                                                             Edit
                                                         </button>
+                                                        {isAdmin && (
+                                                            <button 
+                                                                className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                                                onClick={(e) => { e.stopPropagation(); handleDelete(emp.id, emp.name); }}
+                                                            >
+                                                                <Trash2 size={16} /> Delete
+                                                            </button>
+                                                        )}
                                                         {emp.onboardingStatus === 'NOT_JOINED' && (
                                                             <button 
                                                                 className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-blue-600 flex items-center gap-2"

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
     ArrowLeft, Save, User as UserIcon, Briefcase, 
     CreditCard, Calendar, Phone, MapPin, 
-    ShieldCheck, TrendingUp, AlertCircle, CheckCircle2
+    ShieldCheck, TrendingUp, AlertCircle, CheckCircle2, Key
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
@@ -39,6 +39,34 @@ const EditEmployee = () => {
         managerId: ''
     });
     const [managers, setManagers] = useState([]);
+    const [isResettingPassword, setIsResettingPassword] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+
+    const handleResetPassword = async () => {
+        if (!newPassword || newPassword.length < 6) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
+        setIsResettingPassword(true);
+        try {
+            await api.put(`/users/${id}/reset-password`, { password: newPassword });
+            alert('Password successfully reset! Ensure you securely provide this new password to the employee.');
+            setNewPassword('');
+        } catch (error) {
+            alert('Failed to reset password: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsResettingPassword(false);
+        }
+    };
+
+    const generatePassword = () => {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+        let retVal = "";
+        for (let i = 0, n = charset.length; i < 10; ++i) {
+            retVal += charset.charAt(Math.floor(Math.random() * n));
+        }
+        setNewPassword(retVal);
+    };
 
     useEffect(() => {
         fetchEmployee();
@@ -404,6 +432,38 @@ const EditEmployee = () => {
                                         onChange={e => setFormData({ ...formData, ctc: e.target.value })} 
                                     />
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Section: Security */}
+                        <div className="form-section card border-blue-100 bg-blue-50/20">
+                            <div className="section-header">
+                                <Key size={20} className="text-blue-500" />
+                                <h2>Security (Admin Reset)</h2>
+                            </div>
+                            <div className="space-y-4">
+                                <p className="text-xs text-gray-500">Reset this employee's password manually. Give them the new password so they can log in.</p>
+                                <div className="form-group">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="m-0">New Password</label>
+                                        <button type="button" onClick={generatePassword} className="text-xs text-accent font-bold hover:underline">Generate</button>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        className="input-field" 
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        placeholder="Enter new password"
+                                    />
+                                </div>
+                                <button 
+                                    type="button" 
+                                    className="btn-primary w-full flex items-center justify-center gap-2"
+                                    onClick={handleResetPassword}
+                                    disabled={isResettingPassword || !newPassword}
+                                >
+                                    <Key size={16} /> {isResettingPassword ? 'Resetting...' : 'Reset Password'}
+                                </button>
                             </div>
                         </div>
 

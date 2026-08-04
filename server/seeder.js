@@ -22,7 +22,7 @@ const users = [
         employeeId: 'HEMS-001',
         firstName: 'System',
         lastName: 'Admin',
-        email: 'admin@helix.com',
+        email: 'admin@octacrest.com',
         password: 'Password123',
         role: 'SUPER_ADMIN',
         designation: 'CEO',
@@ -31,7 +31,7 @@ const users = [
         employeeId: 'HEMS-002',
         firstName: 'Sarah',
         lastName: 'Manager',
-        email: 'manager@helix.com',
+        email: 'manager@octacrest.com',
         password: 'Password123',
         role: 'MANAGER',
         designation: 'Engineering Lead',
@@ -40,7 +40,7 @@ const users = [
         employeeId: 'HEMS-003',
         firstName: 'John',
         lastName: 'Employee',
-        email: 'employee@helix.com',
+        email: 'employee@octacrest.com',
         password: 'Password123',
         role: 'EMPLOYEE',
         designation: 'Software Engineer',
@@ -63,8 +63,8 @@ const seedData = async () => {
         const createdUsers = await User.create(users);
 
         // Set John's manager to Sarah
-        const manager = await User.findOne({ email: 'manager@helix.com' });
-        const employee = await User.findOne({ email: 'employee@helix.com' });
+        const manager = await User.findOne({ email: 'manager@octacrest.com' });
+        const employee = await User.findOne({ email: 'employee@octacrest.com' });
 
         if (manager && employee) {
             employee.managerId = manager._id;
@@ -74,14 +74,14 @@ const seedData = async () => {
         // Create Seed Projects
         if (manager) {
             await Project.create([
-                { name: 'HEMS Development', projectCode: 'PRJ-101', description: 'Internal HR portal', client: 'Helix Inc', managerId: manager._id },
-                { name: 'Acme Corp Rebrand', projectCode: 'PRJ-24A', description: 'Marketing site redesign', client: 'Acme Corp', managerId: manager._id },
-                { name: 'Internal Training', projectCode: 'HR-001', description: 'Security & compliance modules', client: 'Helix Inc', managerId: manager._id }
+                { name: 'HEMS Development', projectCode: 'PRJ-101', description: 'Internal HR portal', client: 'Octacrest Inc', managerId: manager._id },
+                { name: 'Client Project Alpha', projectCode: 'PRJ-102', description: 'Mobile app development', client: 'Acme Corp', managerId: manager._id },
+                { name: 'Internal Training', projectCode: 'HR-001', description: 'Security & compliance modules', client: 'Octacrest Inc', managerId: manager._id }
             ]);
         }
 
         // Create Seed Onboarding Tasks for John
-        const admin = await User.findOne({ email: 'admin@helix.com' });
+        const admin = await User.findOne({ email: 'admin@octacrest.com' });
         if (employee && manager && admin) {
             await OnboardingTask.create([
                 { userId: employee._id, title: 'Upload Signed Offer Letter', description: 'Please upload the final signed copy of your offer letter.', type: 'ONBOARDING', assignedTo: employee._id, dueDate: new Date(Date.now() + 86400000) },
@@ -167,9 +167,9 @@ const seedData = async () => {
         console.log('Data Imported Successfully!');
         console.log('------------------------------------------------');
         console.log('Login Details:');
-        console.log('Admin    : admin@helix.com / Password123');
-        console.log('Manager  : manager@helix.com / Password123');
-        console.log('Employee : employee@helix.com / Password123');
+        console.log('Admin    : admin@octacrest.com / Password123');
+        console.log('Manager  : manager@octacrest.com / Password123');
+        console.log('Employee : employee@octacrest.com / Password123');
         console.log('------------------------------------------------');
         process.exit();
     } catch (err) {

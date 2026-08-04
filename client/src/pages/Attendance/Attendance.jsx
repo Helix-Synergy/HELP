@@ -812,9 +812,10 @@ const Attendance = () => {
                                     e.preventDefault();
                                     setIsSubmitting(true);
                                     try {
-                                        // Format punches to include the date
                                         const formattedPunches = regularizeFormData.proposedPunches.map(p => ({
-                                            punchIn: new Date(`${regularizeFormData.date}T${p.punchIn}`),
+                                            punchIn: regularizeFormData.type === 'MISSING_PUNCH' 
+                                                ? new Date(`${regularizeFormData.date}T${p.punchOut}`) // Backend ignores this for MISSING_PUNCH
+                                                : new Date(`${regularizeFormData.date}T${p.punchIn}`),
                                             punchOut: regularizeFormData.type === 'FORGOT_PUNCH_IN' 
                                                 ? new Date(`${regularizeFormData.date}T${p.punchIn}`) // same as in for now, server handles it
                                                 : new Date(`${regularizeFormData.date}T${p.punchOut}`)
@@ -858,11 +859,13 @@ const Attendance = () => {
 
                                         <div className="space-y-3">
                                             <label className="text-xs font-bold text-gray-500 uppercase">
-                                                {regularizeFormData.type === 'FORGOT_PUNCH_IN' ? 'Proposed Punch In Time' : 'Proposed Timing'}
+                                                {regularizeFormData.type === 'FORGOT_PUNCH_IN' ? 'Proposed Punch In Time' : 
+                                                 regularizeFormData.type === 'MISSING_PUNCH' ? 'Proposed Punch Out Time' : 'Proposed Timing'}
                                             </label>
                                             
                                             {regularizeFormData.proposedPunches.map((p, idx) => (
-                                                <div key={idx} className={`grid ${regularizeFormData.type === 'FORGOT_PUNCH_IN' ? 'grid-cols-1' : 'grid-cols-2'} gap-3 p-3 bg-gray-50 rounded-xl`}>
+                                                <div key={idx} className={`grid ${['FORGOT_PUNCH_IN', 'MISSING_PUNCH'].includes(regularizeFormData.type) ? 'grid-cols-1' : 'grid-cols-2'} gap-3 p-3 bg-gray-50 rounded-xl`}>
+                                                    {regularizeFormData.type !== 'MISSING_PUNCH' && (
                                                     <div>
                                                         <label className="text-[10px] text-gray-400">Punch In</label>
                                                         <input 
@@ -877,6 +880,7 @@ const Attendance = () => {
                                                             }}
                                                         />
                                                     </div>
+                                                    )}
                                                     {regularizeFormData.type !== 'FORGOT_PUNCH_IN' && (
                                                         <div>
                                                             <label className="text-[10px] text-gray-400">Punch Out</label>

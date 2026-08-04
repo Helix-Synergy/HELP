@@ -302,7 +302,7 @@ const Onboarding = () => {
         <motion.div className="onboarding-page" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div className="directory-header mb-8">
                 <div>
-                    <h1 className="page-title">Welcome to the Helix Synergy Corp!</h1>
+                    <h1 className="page-title">Welcome to Octacrest Corporate Pvt!</h1>
                     <p className="page-subtitle">
                         {onboardingStatus === 'COMPLETED' ? "You've successfully joined the team." : "Please complete your onboarding process to access all features."}
                     </p>

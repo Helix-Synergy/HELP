@@ -28,9 +28,9 @@
 .sidebar-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     font-weight: 700;
-    font-size: 18px;
+    font-size: 15px;
     color: var(--text-primary);
 }
 
@@ -136,7 +136,7 @@
         top: 0;
         height: 100vh;
         z-index: 2000;
-        width: 260px !important; /* Fixed width on mobile drawer */
+        width: 280px !important; /* Fixed width on mobile drawer */
         box-shadow: var(--shadow-xl);
     }
 

@@ -18,7 +18,7 @@ app.use(express.json());
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://help.helixsynergycorp.org',
+  'https://help.octacrestcorporate.org',
   'https://help-od4c.onrender.com'
 ];
 

@@ -145,6 +145,12 @@ exports.updateRegularizationStatus = asyncHandler(async (req, res, next) => {
                 punchInDevice: 'Desktop',
                 punchInIP: 'N/A'
             }];
+        } else if (request.type === 'MISSING_PUNCH' && attendance && attendance.punches && attendance.punches.length > 0) {
+            // Only update the punchOut of the last punch session; preserve the original punchIn
+            updatedPunches = [...attendance.punches];
+            const lastIdx = updatedPunches.length - 1;
+            updatedPunches[lastIdx].punchOut = request.proposedPunches[0].punchOut;
+            updatedPunches[lastIdx].location = { name: 'Regularized' };
         } else {
             updatedPunches = request.proposedPunches.map(p => ({
                 punchIn: p.punchIn,
